@@ -64,10 +64,18 @@ public class PermissionsFragment extends Fragment {
             if (subject == null) {
                 // No subject found
                 Log.e(PermissionCompat.TAG, "PermissionCompat.onRequestPermissionsResult invoked but didn't find the corresponding permission request.");
+                if (callback != null) {
+                    callback.onError(new Exception("PermissionCompat.onRequestPermissionsResult invoked but didn't find the corresponding permission request."));
+                }
                 return;
             }
             mSubjects.remove(permissions[i]);
-            boolean granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
+            boolean granted;
+            if (PermissionCompat.isMarshmallow() && "Xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
+                granted = PermissionCompat.hasSelfPermissionForXiaomi(getActivity(), permissions[i]);
+            } else {
+                granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
+            }
             list.add(new Permission(permissions[i], granted, shouldShowRequestPermissionRationale[i]));
         }
         if (callback != null) {
@@ -77,6 +85,9 @@ public class PermissionsFragment extends Fragment {
 
     @TargetApi(Build.VERSION_CODES.M)
     boolean isGranted(String permission) {
+        if (PermissionCompat.isMarshmallow() && "Xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
+            return PermissionCompat.hasSelfPermissionForXiaomi(getActivity(), permission);
+        }
         return getActivity().checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
     }
 

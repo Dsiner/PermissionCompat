@@ -3,10 +3,17 @@ package com.d.lib.permissioncompat;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.FragmentManager;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Process;
 import android.support.annotation.NonNull;
+import android.support.v4.app.AppOpsManagerCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.PermissionChecker;
+import android.support.v4.util.SimpleArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -15,11 +22,28 @@ import java.util.List;
 
 /**
  * PermissionCompat
+ * For more detail, check this https://github.com/tbruyelle/RxPermissions
  * Created by D on 2018/4/13.
  */
 public class PermissionCompat {
 
     static final String TAG = "PermissionCompat";
+
+    // Map of dangerous permissions introduced in later framework versions.
+    // Used to conditionally bypass permission-hold checks on older devices.
+    private static final SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
+
+    static {
+        MIN_SDK_PERMISSIONS = new SimpleArrayMap<String, Integer>(8);
+        MIN_SDK_PERMISSIONS.put("com.android.voicemail.permission.ADD_VOICEMAIL", 14);
+        MIN_SDK_PERMISSIONS.put("android.permission.BODY_SENSORS", 20);
+        MIN_SDK_PERMISSIONS.put("android.permission.READ_CALL_LOG", 16);
+        MIN_SDK_PERMISSIONS.put("android.permission.READ_EXTERNAL_STORAGE", 16);
+        MIN_SDK_PERMISSIONS.put("android.permission.USE_SIP", 9);
+        MIN_SDK_PERMISSIONS.put("android.permission.WRITE_CALL_LOG", 16);
+        MIN_SDK_PERMISSIONS.put("android.permission.SYSTEM_ALERT_WINDOW", 23);
+        MIN_SDK_PERMISSIONS.put("android.permission.WRITE_SETTINGS", 23);
+    }
 
     String[] mPermissions;
     PermissionCallback<Permission> mCallback;
@@ -117,10 +141,6 @@ public class PermissionCompat {
         }
     }
 
-    public boolean isMainThread() {
-        return Looper.getMainLooper().getThread() == Thread.currentThread();
-    }
-
     @TargetApi(Build.VERSION_CODES.M)
     private void requestImplementation(final String... permissions) {
         final List<Permission> piss = new ArrayList<>();
@@ -173,9 +193,16 @@ public class PermissionCompat {
                             @Override
                             public void run() {
                                 mCallback.onNext(new Permission(pers));
+                                mCallback.onComplete();
                             }
                         });
                     }
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    mCallback.onError(e);
+                    mCallback.onComplete();
                 }
             });
         } else {
@@ -184,6 +211,7 @@ public class PermissionCompat {
                     @Override
                     public void run() {
                         mCallback.onNext(new Permission(piss));
+                        mCallback.onComplete();
                     }
                 });
             }
@@ -240,12 +268,103 @@ public class PermissionCompat {
         return isMarshmallow() && mPermissionsFragment.isRevoked(permission);
     }
 
-    boolean isMarshmallow() {
+    static boolean isMarshmallow() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
     }
 
-    void onRequestPermissionsResult(String permissions[], int[] grantResults) {
-        mPermissionsFragment.onRequestPermissionsResult(permissions, grantResults, new boolean[permissions.length]);
+    /**
+     * Checks all given permissions have been granted.
+     *
+     * @param grantResults results
+     * @return returns true if all permissions have been granted.
+     */
+    public static boolean verifyPermissions(int... grantResults) {
+        if (grantResults.length == 0) {
+            return false;
+        }
+        for (int result : grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if the permissions are all already granted.
+     * <p>
+     * Always true if SDK &lt; 23.
+     */
+    public static boolean hasSelfPermissions(@NonNull Context context, String... permissions) {
+        if (permissions == null || permissions.length <= 0) {
+            throw new IllegalArgumentException("permissions is null or empty");
+        }
+        if (isMarshmallow()) {
+            for (String permission : permissions) {
+                if (permissionExists(permission) && !hasSelfPermission(context, permission)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if the permission exists in this SDK version
+     *
+     * @param permission permission
+     * @return returns true if the permission exists in this SDK version
+     */
+    private static boolean permissionExists(String permission) {
+        // Check if the permission could potentially be missing on this device
+        Integer minVersion = MIN_SDK_PERMISSIONS.get(permission);
+        // If null was returned from the above call, there is no need for a device API level check for the permission;
+        // otherwise, we check if its minimum API level requirement is met
+        return minVersion == null || Build.VERSION.SDK_INT >= minVersion;
+    }
+
+    /**
+     * Determine context has access to the given permission.
+     * <p>
+     * This is a workaround for RuntimeException of Parcel#readException.
+     * For more detail, check this issue https://github.com/hotchemi/PermissionsDispatcher/issues/107
+     *
+     * @param context    context
+     * @param permission permission
+     * @return returns true if context has access to the given permission, false otherwise.
+     * @see #hasSelfPermissions(Context, String...)
+     */
+    private static boolean hasSelfPermission(Context context, String permission) {
+        if (isMarshmallow()) {
+            if ("Xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
+                return hasSelfPermissionForXiaomi(context, permission);
+            }
+            try {
+                return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
+            } catch (RuntimeException t) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean hasSelfPermissionForXiaomi(Context context, String permission) {
+        String permissionToOp = AppOpsManagerCompat.permissionToOp(permission);
+        if (permissionToOp == null) {
+            // in case of normal permissions(e.g. INTERNET)
+            return true;
+        }
+        int noteOp = AppOpsManagerCompat.noteOp(context, permissionToOp, Process.myUid(), context.getPackageName());
+        try {
+            return noteOp == AppOpsManagerCompat.MODE_ALLOWED
+                    && PermissionChecker.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
+        } catch (RuntimeException t) {
+            return false;
+        }
+    }
+
+    private boolean isMainThread() {
+        return Looper.getMainLooper().getThread() == Thread.currentThread();
     }
 
     /**
