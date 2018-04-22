@@ -17,6 +17,9 @@ import android.support.v4.util.SimpleArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.d.lib.permissioncompat.support.ManufacturerSupport;
+import com.d.lib.permissioncompat.support.PermissionsChecker;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +53,7 @@ public class PermissionCompat {
     PermissionsFragment mPermissionsFragment;
     PermissionSchedulers.Schedulers subscribeScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
     PermissionSchedulers.Schedulers observeOnScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
+    boolean support = true;
 
     public PermissionCompat(@NonNull Activity activity) {
         mPermissionsFragment = getPermissionsFragment(activity);
@@ -89,6 +93,14 @@ public class PermissionCompat {
         return this;
     }
 
+    /**
+     * if support above M ex Xiaomi、Meizu...
+     */
+    public PermissionCompat withSupport(boolean support) {
+        this.support = support;
+        return this;
+    }
+
     public PermissionCompat subscribeOn(PermissionSchedulers.Schedulers scheduler) {
         this.subscribeScheduler = scheduler;
         return this;
@@ -107,7 +119,11 @@ public class PermissionCompat {
         switchThread(subscribeScheduler, new Runnable() {
             @Override
             public void run() {
-                requestImplementation(mPermissions);
+                if (support && ManufacturerSupport.isUnderMNeedChecked()) {
+                    requestImplementationL(mPermissions);
+                } else {
+                    requestImplementationM(mPermissions);
+                }
             }
         });
     }
@@ -141,8 +157,44 @@ public class PermissionCompat {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void requestImplementationL(final String... permissions) {
+        final List<Permission> piss = new ArrayList<>();
+        final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
+        final List<String> unrequestedPermissions = new ArrayList<>();
+
+        // In case of multiple permissions, we create an Observable for each of them.
+        // At the end, the observables are combined to have a unique response.
+        for (String permission : permissions) {
+            mPermissionsFragment.log("Requesting permission " + permission);
+            if (PermissionsChecker.isPermissionGranted(mPermissionsFragment.getActivity(), permission)) {
+                Permission p = new Permission(permission, true, false);
+                piss.add(p);
+                publishs.add(PublishCallback.create(p));
+                continue;
+            }
+            piss.add(new Permission(permission, false, true));
+            unrequestedPermissions.add(permission);
+            PublishCallback<Permission> subject = PublishCallback.create();
+            publishs.add(subject);
+        }
+        if (!unrequestedPermissions.isEmpty()) {
+            String[] unrequestedPermissionsArray = unrequestedPermissions.toArray(new String[unrequestedPermissions.size()]);
+            mPermissionsFragment.log("deny permissions " + TextUtils.join(", ", unrequestedPermissionsArray));
+        }
+        if (mCallback != null) {
+            switchThread(observeOnScheduler, new Runnable() {
+                @Override
+                public void run() {
+                    mCallback.onNext(new Permission(piss));
+                    mCallback.onComplete();
+                }
+            });
+        }
+    }
+
     @TargetApi(Build.VERSION_CODES.M)
-    private void requestImplementation(final String... permissions) {
+    private void requestImplementationM(final String... permissions) {
         final List<Permission> piss = new ArrayList<>();
         final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
         final List<String> unrequestedPermissions = new ArrayList<>();
