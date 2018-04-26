@@ -1,6 +1,5 @@
 package com.d.lib.permissioncompat;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Context;
@@ -10,7 +9,6 @@ import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.v4.app.AppOpsManagerCompat;
 import android.support.v4.content.PermissionChecker;
-import android.text.TextUtils;
 
 import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
 import com.d.lib.permissioncompat.support.xiaomi.PermissionsFragmentXiaomi;
@@ -43,89 +41,12 @@ public class PermissionXiaomi extends PermissionCompat {
         return permissionsFragment;
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     @Override
-    protected void requestImplementation(String... permissions) {
-        final List<Permission> piss = new ArrayList<>();
-        final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
-        final List<String> unrequestedPermissions = new ArrayList<>();
-
-        // In case of multiple permissions, we create an Observable for each of them.
-        // At the end, the observables are combined to have a unique response.
-        for (String permission : permissions) {
-            mPermissionsFragment.log("Requesting permission " + permission);
-            if (isGranted(permission)) {
-                // Already granted, or not Android M
-                // Return a granted Permission object.
-                Permission p = new Permission(permission, true, false);
-                piss.add(p);
-                publishs.add(PublishCallback.create(p));
-                continue;
-            }
-
-            if (isRevoked(permission)) {
-                // Revoked by a policy, return a denied Permission object.
-                Permission p = new Permission(permission, false, false);
-                piss.add(p);
-                publishs.add(PublishCallback.create(p));
-                continue;
-            }
-
-            PublishCallback<Permission> subject = mPermissionsFragment.getSubjectByPermission(permission);
-            // Create a new subject if not exists
-            if (subject == null) {
-                unrequestedPermissions.add(permission);
-                subject = PublishCallback.create();
-                mPermissionsFragment.setSubjectForPermission(permission, subject);
-            }
-
-            publishs.add(subject);
-        }
-
-        if (!unrequestedPermissions.isEmpty()) {
-            String[] unrequestedPermissionsArray = unrequestedPermissions.toArray(new String[unrequestedPermissions.size()]);
-            mPermissionsFragment.log("requestPermissionsFromFragment " + TextUtils.join(", ", unrequestedPermissionsArray));
-            mPermissionsFragment.requestPermissions(unrequestedPermissionsArray, new PermissionCallback<List<Permission>>() {
-                @Override
-                public void onNext(List<Permission> permission) {
-                    final List<Permission> pers = new ArrayList<>();
-                    pers.addAll(piss);
-                    pers.addAll(permission);
-                    if (mCallback != null) {
-                        switchThread(observeOnScheduler, new Runnable() {
-                            @Override
-                            public void run() {
-                                mCallback.onNext(confirmPermission(pers));
-                                mCallback.onComplete();
-                            }
-                        });
-                    }
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    mCallback.onError(e);
-                    mCallback.onComplete();
-                }
-            });
-        } else {
-            if (mCallback != null) {
-                switchThread(observeOnScheduler, new Runnable() {
-                    @Override
-                    public void run() {
-                        mCallback.onNext(confirmPermission(piss));
-                        mCallback.onComplete();
-                    }
-                });
-            }
-        }
-    }
-
-    private Permission confirmPermission(List<Permission> permissions) {
+    protected Permission combinePermission(List<Permission> permissions) {
         if ("Redmi Note 3".equalsIgnoreCase(Build.MODEL)) {
             List<Permission> list = new ArrayList<>();
             for (Permission p : permissions) {
-                if (p.granted && !PermissionsChecker.isPermissionGranted(mPermissionsFragment.getActivity(), p.name)) {
+                if (p.granted && !PermissionsChecker.isPermissionGranted(mContext, p.name)) {
                     list.add(p);
                 }
             }
@@ -142,10 +63,11 @@ public class PermissionXiaomi extends PermissionCompat {
 
     @Override
     public boolean isGranted(String permission) {
-        return hasSelfPermissionForXiaomi(mPermissionsFragment.getActivity(), permission);
+        return hasSelfPermissionForXiaomi(mContext, permission);
     }
 
     public static boolean hasSelfPermissionForXiaomi(Context context, String permission) {
+        context = context.getApplicationContext();
         if ("Redmi Note 3".equalsIgnoreCase(Build.MODEL)) {
             return hasSelfPermissionForXiaomiOS(context, permission)
                     && PermissionsChecker.isPermissionGranted(context, permission);

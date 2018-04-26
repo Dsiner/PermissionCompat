@@ -18,6 +18,7 @@ import com.d.lib.permissioncompat.support.ManufacturerSupport;
 import com.d.lib.permissioncompat.support.PermissionSupport;
 import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,14 +47,30 @@ public class PermissionCompat {
         MIN_SDK_PERMISSIONS.put("android.permission.WRITE_SETTINGS", 23);
     }
 
+    protected Context mContext;
+    protected WeakReference<Activity> mRefActivity;
     protected String[] mPermissions;
-    protected PermissionCallback<Permission> mCallback;
+    protected WeakReference<PermissionCallback<Permission>> mCallback;
     protected PermissionsFragment mPermissionsFragment;
     protected PermissionSchedulers.Schedulers subscribeScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
     protected PermissionSchedulers.Schedulers observeOnScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
 
     PermissionCompat(@NonNull Activity activity) {
+        mContext = activity.getApplicationContext();
+        mRefActivity = new WeakReference<>(activity);
         mPermissionsFragment = getPermissionsFragment(activity);
+    }
+
+    protected Activity getActivity() {
+        return mRefActivity != null ? mRefActivity.get() : null;
+    }
+
+    protected PermissionCallback<Permission> getCallback() {
+        return mCallback != null ? mCallback.get() : null;
+    }
+
+    protected boolean isFinish() {
+        return getActivity() == null || getActivity().isFinishing() || getCallback() == null;
     }
 
     protected PermissionsFragment getPermissionsFragment(Activity activity) {
@@ -74,16 +91,12 @@ public class PermissionCompat {
         return (PermissionsFragment) activity.getFragmentManager().findFragmentByTag(TAG);
     }
 
-    public void setLogging(boolean logging) {
-        mPermissionsFragment.setLogging(logging);
-    }
-
     public static PermissionCompat with(Activity activity) {
-        switch (PermissionSupport.getType()) {
-            case PermissionSupport.TYPE_MARSHMALLOW_XIAOMI:
-                return new PermissionXiaomi(activity);
-            case PermissionSupport.TYPE_LOLLIPOP:
-                return new PermissionLollipop(activity);
+        int type = PermissionSupport.getType();
+        if (type == PermissionSupport.TYPE_LOLLIPOP) {
+            return new PermissionLollipop(activity);
+        } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
+            return new PermissionXiaomi(activity);
         }
         return new PermissionCompat(activity);
     }
@@ -114,10 +127,13 @@ public class PermissionCompat {
         if (mPermissions == null || mPermissions.length == 0) {
             throw new IllegalArgumentException("PermissionCompat.request/requestEach requires at least one input permission");
         }
-        this.mCallback = callback;
+        this.mCallback = new WeakReference<>(callback);
         switchThread(subscribeScheduler, new Runnable() {
             @Override
             public void run() {
+                if (isFinish()) {
+                    return;
+                }
                 requestImplementation(mPermissions);
             }
         });
@@ -125,19 +141,19 @@ public class PermissionCompat {
 
     @TargetApi(Build.VERSION_CODES.M)
     protected void requestImplementation(final String... permissions) {
-        final List<Permission> piss = new ArrayList<>();
+        final List<Permission> ps = new ArrayList<>();
         final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
         final List<String> unrequestedPermissions = new ArrayList<>();
 
         // In case of multiple permissions, we create an Observable for each of them.
         // At the end, the observables are combined to have a unique response.
         for (String permission : permissions) {
-            mPermissionsFragment.log("Requesting permission " + permission);
+            Log.d(PermissionCompat.TAG, "Requesting permission " + permission);
             if (isGranted(permission)) {
                 // Already granted, or not Android M
                 // Return a granted Permission object.
                 Permission p = new Permission(permission, true, false);
-                piss.add(p);
+                ps.add(p);
                 publishs.add(PublishCallback.create(p));
                 continue;
             }
@@ -145,7 +161,7 @@ public class PermissionCompat {
             if (isRevoked(permission)) {
                 // Revoked by a policy, return a denied Permission object.
                 Permission p = new Permission(permission, false, false);
-                piss.add(p);
+                ps.add(p);
                 publishs.add(PublishCallback.create(p));
                 continue;
             }
@@ -163,41 +179,58 @@ public class PermissionCompat {
 
         if (!unrequestedPermissions.isEmpty()) {
             String[] unrequestedPermissionsArray = unrequestedPermissions.toArray(new String[unrequestedPermissions.size()]);
-            mPermissionsFragment.log("requestPermissionsFromFragment " + TextUtils.join(", ", unrequestedPermissionsArray));
+            Log.d(PermissionCompat.TAG, "requestPermissionsFromFragment " + TextUtils.join(", ", unrequestedPermissionsArray));
+            if (isFinish()) {
+                return;
+            }
             mPermissionsFragment.requestPermissions(unrequestedPermissionsArray, new PermissionCallback<List<Permission>>() {
                 @Override
                 public void onNext(List<Permission> permission) {
-                    final List<Permission> pers = new ArrayList<>();
-                    pers.addAll(piss);
-                    pers.addAll(permission);
-                    if (mCallback != null) {
-                        switchThread(observeOnScheduler, new Runnable() {
-                            @Override
-                            public void run() {
-                                mCallback.onNext(new Permission(pers));
-                                mCallback.onComplete();
-                            }
-                        });
+                    if (isFinish()) {
+                        return;
                     }
+                    List<Permission> list = new ArrayList<>();
+                    list.addAll(ps);
+                    list.addAll(permission);
+                    final Permission result = combinePermission(list);
+                    switchThread(observeOnScheduler, new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isFinish()) {
+                                return;
+                            }
+                            getCallback().onNext(result);
+                            getCallback().onComplete();
+                        }
+                    });
                 }
 
                 @Override
                 public void onError(Throwable e) {
-                    mCallback.onError(e);
-                    mCallback.onComplete();
+                    if (isFinish()) {
+                        return;
+                    }
+                    getCallback().onError(e);
+                    getCallback().onComplete();
                 }
             });
         } else {
-            if (mCallback != null) {
-                switchThread(observeOnScheduler, new Runnable() {
-                    @Override
-                    public void run() {
-                        mCallback.onNext(new Permission(piss));
-                        mCallback.onComplete();
+            final Permission result = combinePermission(ps);
+            switchThread(observeOnScheduler, new Runnable() {
+                @Override
+                public void run() {
+                    if (isFinish()) {
+                        return;
                     }
-                });
-            }
+                    getCallback().onNext(result);
+                    getCallback().onComplete();
+                }
+            });
         }
+    }
+
+    protected Permission combinePermission(List<Permission> permissions) {
+        return new Permission(permissions);
     }
 
     /**
@@ -238,7 +271,7 @@ public class PermissionCompat {
     @SuppressWarnings("WeakerAccess")
     public boolean isGranted(String permission) {
         return !ManufacturerSupport.isMarshmallow()
-                || mPermissionsFragment.getActivity().checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
+                || mContext.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
     }
 
     /**
@@ -249,8 +282,7 @@ public class PermissionCompat {
     @SuppressWarnings("WeakerAccess")
     public boolean isRevoked(String permission) {
         return ManufacturerSupport.isMarshmallow()
-                && mPermissionsFragment.getActivity().getPackageManager()
-                .isPermissionRevokedByPolicy(permission, mPermissionsFragment.getActivity().getPackageName());
+                && mContext.getPackageManager().isPermissionRevokedByPolicy(permission, mContext.getPackageName());
     }
 
     /**
@@ -275,6 +307,7 @@ public class PermissionCompat {
      * Returns true if the permissions are all already granted.
      */
     public static boolean hasSelfPermissions(@NonNull Context context, String... permissions) {
+        context = context.getApplicationContext();
         if (permissions == null || permissions.length <= 0) {
             throw new IllegalArgumentException("permissions is null or empty");
         }
@@ -312,11 +345,13 @@ public class PermissionCompat {
      * @see #hasSelfPermissions(Context, String...)
      */
     private static boolean hasSelfPermission(Context context, String permission) {
-        if (PermissionSupport.getType() == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
-            return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
-        } else if (PermissionSupport.getType() == PermissionSupport.TYPE_LOLLIPOP) {
+        context = context.getApplicationContext();
+        int type = PermissionSupport.getType();
+        if (type == PermissionSupport.TYPE_LOLLIPOP) {
             return PermissionsChecker.isPermissionGranted(context, permission);
-        } else if (PermissionSupport.getType() == PermissionSupport.TYPE_MARSHMALLOW) {
+        } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
+            return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
+        } else if (type == PermissionSupport.TYPE_MARSHMALLOW) {
             try {
                 return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
             } catch (RuntimeException t) {

@@ -43,6 +43,7 @@ public class PermissionsChecker {
      */
     public static boolean isPermissionGranted(Context context, String permission) {
         try {
+            context = context.getApplicationContext();
             switch (permission) {
                 case Manifest.permission.READ_CONTACTS:
                     return checkReadContacts(context);

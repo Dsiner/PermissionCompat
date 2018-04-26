@@ -2,6 +2,7 @@ package com.d.lib.permissioncompat;
 
 import android.annotation.TargetApi;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,10 +18,10 @@ public class PermissionsFragment extends Fragment {
 
     protected static final int PERMISSIONS_REQUEST_CODE = 42;
 
+    protected Context mContext;
     // Contains all the current permission requests.
     // Once granted or denied, they are removed from it.
     protected Map<String, PublishCallback<Permission>> mSubjects = new HashMap<>();
-    protected boolean mLogging;
     protected PermissionCallback<List<Permission>> callback;
 
     public PermissionsFragment() {
@@ -30,6 +31,7 @@ public class PermissionsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+        mContext = getActivity().getApplicationContext();
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -58,7 +60,7 @@ public class PermissionsFragment extends Fragment {
     protected void onRequestPermissionsResult(String permissions[], int[] grantResults, boolean[] shouldShowRequestPermissionRationale) {
         List<Permission> list = new ArrayList<Permission>();
         for (int i = 0, size = permissions.length; i < size; i++) {
-            log("onRequestPermissionsResult  " + permissions[i]);
+            Log.d(PermissionCompat.TAG, "onRequestPermissionsResult  " + permissions[i]);
             // Find the corresponding subject
             PublishCallback<Permission> subject = mSubjects.get(permissions[i]);
             if (subject == null) {
@@ -70,7 +72,7 @@ public class PermissionsFragment extends Fragment {
                 return;
             }
             mSubjects.remove(permissions[i]);
-            boolean granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
+            boolean granted = isGranted(permissions[i], grantResults[i], shouldShowRequestPermissionRationale[i]);
             list.add(new Permission(permissions[i], granted, shouldShowRequestPermissionRationale[i]));
         }
         if (callback != null) {
@@ -78,8 +80,9 @@ public class PermissionsFragment extends Fragment {
         }
     }
 
-    public void setLogging(boolean logging) {
-        mLogging = logging;
+    @TargetApi(Build.VERSION_CODES.M)
+    protected boolean isGranted(String permission, int grantResult, boolean shouldShowRequestPermissionRationale) {
+        return grantResult == PackageManager.PERMISSION_GRANTED;
     }
 
     public PublishCallback<Permission> getSubjectByPermission(@NonNull String permission) {
@@ -94,9 +97,7 @@ public class PermissionsFragment extends Fragment {
         return mSubjects.put(permission, subject);
     }
 
-    public void log(String message) {
-        if (mLogging) {
-            Log.d(PermissionCompat.TAG, message);
-        }
+    protected boolean isFinish() {
+        return getActivity() == null || getActivity().isFinishing();
     }
 }
