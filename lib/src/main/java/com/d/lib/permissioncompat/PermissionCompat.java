@@ -8,17 +8,15 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Process;
 import android.support.annotation.NonNull;
-import android.support.v4.app.AppOpsManagerCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.PermissionChecker;
 import android.support.v4.util.SimpleArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.d.lib.permissioncompat.support.ManufacturerSupport;
-import com.d.lib.permissioncompat.support.PermissionsChecker;
+import com.d.lib.permissioncompat.support.PermissionSupport;
+import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +28,11 @@ import java.util.List;
  */
 public class PermissionCompat {
 
-    static final String TAG = "PermissionCompat";
+    public final static String TAG = "PermissionCompat";
 
     // Map of dangerous permissions introduced in later framework versions.
     // Used to conditionally bypass permission-hold checks on older devices.
-    private static final SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
+    protected final static SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
 
     static {
         MIN_SDK_PERMISSIONS = new SimpleArrayMap<String, Integer>(8);
@@ -48,18 +46,17 @@ public class PermissionCompat {
         MIN_SDK_PERMISSIONS.put("android.permission.WRITE_SETTINGS", 23);
     }
 
-    String[] mPermissions;
-    PermissionCallback<Permission> mCallback;
-    PermissionsFragment mPermissionsFragment;
-    PermissionSchedulers.Schedulers subscribeScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
-    PermissionSchedulers.Schedulers observeOnScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
-    boolean support = true;
+    protected String[] mPermissions;
+    protected PermissionCallback<Permission> mCallback;
+    protected PermissionsFragment mPermissionsFragment;
+    protected PermissionSchedulers.Schedulers subscribeScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
+    protected PermissionSchedulers.Schedulers observeOnScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
 
-    public PermissionCompat(@NonNull Activity activity) {
+    PermissionCompat(@NonNull Activity activity) {
         mPermissionsFragment = getPermissionsFragment(activity);
     }
 
-    private PermissionsFragment getPermissionsFragment(Activity activity) {
+    protected PermissionsFragment getPermissionsFragment(Activity activity) {
         PermissionsFragment permissionsFragment = findPermissionsFragment(activity);
         boolean isNewInstance = permissionsFragment == null;
         if (isNewInstance) {
@@ -73,12 +70,22 @@ public class PermissionCompat {
         return permissionsFragment;
     }
 
-    private PermissionsFragment findPermissionsFragment(Activity activity) {
+    protected PermissionsFragment findPermissionsFragment(Activity activity) {
         return (PermissionsFragment) activity.getFragmentManager().findFragmentByTag(TAG);
     }
 
     public void setLogging(boolean logging) {
         mPermissionsFragment.setLogging(logging);
+    }
+
+    public static PermissionCompat with(Activity activity) {
+        switch (PermissionSupport.getType()) {
+            case PermissionSupport.TYPE_MARSHMALLOW_XIAOMI:
+                return new PermissionXiaomi(activity);
+            case PermissionSupport.TYPE_LOLLIPOP:
+                return new PermissionLollipop(activity);
+        }
+        return new PermissionCompat(activity);
     }
 
     /**
@@ -90,14 +97,6 @@ public class PermissionCompat {
      */
     public PermissionCompat requestEachCombined(final String... permissions) {
         this.mPermissions = permissions;
-        return this;
-    }
-
-    /**
-     * if support above M ex Xiaomi、Meizu...
-     */
-    public PermissionCompat withSupport(boolean support) {
-        this.support = support;
         return this;
     }
 
@@ -119,82 +118,13 @@ public class PermissionCompat {
         switchThread(subscribeScheduler, new Runnable() {
             @Override
             public void run() {
-                if (support && ManufacturerSupport.isUnderMNeedChecked()) {
-                    requestImplementationL(mPermissions);
-                } else {
-                    requestImplementationM(mPermissions);
-                }
+                requestImplementation(mPermissions);
             }
         });
     }
 
-    private void switchThread(PermissionSchedulers.Schedulers scheduler, final Runnable runnable) {
-        if (scheduler == PermissionSchedulers.Schedulers.IO) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (runnable != null) {
-                        runnable.run();
-                    }
-                }
-            }).start();
-            return;
-        } else if (scheduler == PermissionSchedulers.Schedulers.MAIN_THREAD) {
-            if (!isMainThread()) {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (runnable != null) {
-                            runnable.run();
-                        }
-                    }
-                });
-                return;
-            }
-        }
-        if (runnable != null) {
-            runnable.run();
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void requestImplementationL(final String... permissions) {
-        final List<Permission> piss = new ArrayList<>();
-        final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
-        final List<String> unrequestedPermissions = new ArrayList<>();
-
-        // In case of multiple permissions, we create an Observable for each of them.
-        // At the end, the observables are combined to have a unique response.
-        for (String permission : permissions) {
-            mPermissionsFragment.log("Requesting permission " + permission);
-            if (PermissionsChecker.isPermissionGranted(mPermissionsFragment.getActivity(), permission)) {
-                Permission p = new Permission(permission, true, false);
-                piss.add(p);
-                publishs.add(PublishCallback.create(p));
-                continue;
-            }
-            piss.add(new Permission(permission, false, true));
-            unrequestedPermissions.add(permission);
-            PublishCallback<Permission> subject = PublishCallback.create();
-            publishs.add(subject);
-        }
-        if (!unrequestedPermissions.isEmpty()) {
-            String[] unrequestedPermissionsArray = unrequestedPermissions.toArray(new String[unrequestedPermissions.size()]);
-            mPermissionsFragment.log("deny permissions " + TextUtils.join(", ", unrequestedPermissionsArray));
-        }
-        if (mCallback != null) {
-            switchThread(observeOnScheduler, new Runnable() {
-                @Override
-                public void run() {
-                    mCallback.onNext(new Permission(piss));
-                    mCallback.onComplete();
-                }
-            });
-        }
-    }
-
     @TargetApi(Build.VERSION_CODES.M)
-    private void requestImplementationM(final String... permissions) {
+    protected void requestImplementation(final String... permissions) {
         final List<Permission> piss = new ArrayList<>();
         final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
         final List<String> unrequestedPermissions = new ArrayList<>();
@@ -284,7 +214,7 @@ public class PermissionCompat {
      */
     @SuppressWarnings("WeakerAccess")
     public boolean shouldShowRequestPermissionRationale(final Activity activity, final String... permissions) {
-        if (!isMarshmallow()) {
+        if (!ManufacturerSupport.isMarshmallow()) {
             return false;
         }
         return shouldShowRequestPermissionRationaleImplementation(activity, permissions);
@@ -307,7 +237,8 @@ public class PermissionCompat {
      */
     @SuppressWarnings("WeakerAccess")
     public boolean isGranted(String permission) {
-        return !isMarshmallow() || mPermissionsFragment.isGranted(permission);
+        return !ManufacturerSupport.isMarshmallow()
+                || mPermissionsFragment.getActivity().checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
     }
 
     /**
@@ -317,11 +248,9 @@ public class PermissionCompat {
      */
     @SuppressWarnings("WeakerAccess")
     public boolean isRevoked(String permission) {
-        return isMarshmallow() && mPermissionsFragment.isRevoked(permission);
-    }
-
-    static boolean isMarshmallow() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+        return ManufacturerSupport.isMarshmallow()
+                && mPermissionsFragment.getActivity().getPackageManager()
+                .isPermissionRevokedByPolicy(permission, mPermissionsFragment.getActivity().getPackageName());
     }
 
     /**
@@ -344,18 +273,14 @@ public class PermissionCompat {
 
     /**
      * Returns true if the permissions are all already granted.
-     * <p>
-     * Always true if SDK &lt; 23.
      */
     public static boolean hasSelfPermissions(@NonNull Context context, String... permissions) {
         if (permissions == null || permissions.length <= 0) {
             throw new IllegalArgumentException("permissions is null or empty");
         }
-        if (isMarshmallow()) {
-            for (String permission : permissions) {
-                if (permissionExists(permission) && !hasSelfPermission(context, permission)) {
-                    return false;
-                }
+        for (String permission : permissions) {
+            if (permissionExists(permission) && !hasSelfPermission(context, permission)) {
+                return false;
             }
         }
         return true;
@@ -387,10 +312,11 @@ public class PermissionCompat {
      * @see #hasSelfPermissions(Context, String...)
      */
     private static boolean hasSelfPermission(Context context, String permission) {
-        if (isMarshmallow()) {
-            if ("Xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
-                return hasSelfPermissionForXiaomi(context, permission);
-            }
+        if (PermissionSupport.getType() == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
+            return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
+        } else if (PermissionSupport.getType() == PermissionSupport.TYPE_LOLLIPOP) {
+            return PermissionsChecker.isPermissionGranted(context, permission);
+        } else if (PermissionSupport.getType() == PermissionSupport.TYPE_MARSHMALLOW) {
             try {
                 return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
             } catch (RuntimeException t) {
@@ -400,18 +326,32 @@ public class PermissionCompat {
         return true;
     }
 
-    static boolean hasSelfPermissionForXiaomi(Context context, String permission) {
-        String permissionToOp = AppOpsManagerCompat.permissionToOp(permission);
-        if (permissionToOp == null) {
-            // in case of normal permissions(e.g. INTERNET)
-            return true;
+    protected void switchThread(PermissionSchedulers.Schedulers scheduler, final Runnable runnable) {
+        if (scheduler == PermissionSchedulers.Schedulers.IO) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (runnable != null) {
+                        runnable.run();
+                    }
+                }
+            }).start();
+            return;
+        } else if (scheduler == PermissionSchedulers.Schedulers.MAIN_THREAD) {
+            if (!isMainThread()) {
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (runnable != null) {
+                            runnable.run();
+                        }
+                    }
+                });
+                return;
+            }
         }
-        int noteOp = AppOpsManagerCompat.noteOp(context, permissionToOp, Process.myUid(), context.getPackageName());
-        try {
-            return noteOp == AppOpsManagerCompat.MODE_ALLOWED
-                    && PermissionChecker.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
-        } catch (RuntimeException t) {
-            return false;
+        if (runnable != null) {
+            runnable.run();
         }
     }
 

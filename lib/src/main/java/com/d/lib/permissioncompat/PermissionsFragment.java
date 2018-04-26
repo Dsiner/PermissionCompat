@@ -15,13 +15,13 @@ import java.util.Map;
 
 public class PermissionsFragment extends Fragment {
 
-    private static final int PERMISSIONS_REQUEST_CODE = 42;
+    protected static final int PERMISSIONS_REQUEST_CODE = 42;
 
     // Contains all the current permission requests.
     // Once granted or denied, they are removed from it.
-    private Map<String, PublishCallback<Permission>> mSubjects = new HashMap<>();
-    private boolean mLogging;
-    private PermissionCallback<List<Permission>> callback;
+    protected Map<String, PublishCallback<Permission>> mSubjects = new HashMap<>();
+    protected boolean mLogging;
+    protected PermissionCallback<List<Permission>> callback;
 
     public PermissionsFragment() {
     }
@@ -55,7 +55,7 @@ public class PermissionsFragment extends Fragment {
         onRequestPermissionsResult(permissions, grantResults, shouldShowRequestPermissionRationale);
     }
 
-    void onRequestPermissionsResult(String permissions[], int[] grantResults, boolean[] shouldShowRequestPermissionRationale) {
+    protected void onRequestPermissionsResult(String permissions[], int[] grantResults, boolean[] shouldShowRequestPermissionRationale) {
         List<Permission> list = new ArrayList<Permission>();
         for (int i = 0, size = permissions.length; i < size; i++) {
             log("onRequestPermissionsResult  " + permissions[i]);
@@ -70,30 +70,12 @@ public class PermissionsFragment extends Fragment {
                 return;
             }
             mSubjects.remove(permissions[i]);
-            boolean granted;
-            if (PermissionCompat.isMarshmallow() && "Xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
-                granted = PermissionCompat.hasSelfPermissionForXiaomi(getActivity(), permissions[i]);
-            } else {
-                granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
-            }
+            boolean granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
             list.add(new Permission(permissions[i], granted, shouldShowRequestPermissionRationale[i]));
         }
         if (callback != null) {
             callback.onNext(list);
         }
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
-    boolean isGranted(String permission) {
-        if (PermissionCompat.isMarshmallow() && "Xiaomi".equalsIgnoreCase(Build.MANUFACTURER)) {
-            return PermissionCompat.hasSelfPermissionForXiaomi(getActivity(), permission);
-        }
-        return getActivity().checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
-    boolean isRevoked(String permission) {
-        return getActivity().getPackageManager().isPermissionRevokedByPolicy(permission, getActivity().getPackageName());
     }
 
     public void setLogging(boolean logging) {
@@ -112,7 +94,7 @@ public class PermissionsFragment extends Fragment {
         return mSubjects.put(permission, subject);
     }
 
-    void log(String message) {
+    public void log(String message) {
         if (mLogging) {
             Log.d(PermissionCompat.TAG, message);
         }

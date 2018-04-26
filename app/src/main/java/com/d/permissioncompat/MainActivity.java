@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermissions() {
-        new PermissionCompat(this).requestEachCombined(PERMISSIONS)
+        PermissionCompat.with(this).requestEachCombined(PERMISSIONS)
                 .subscribeOn(PermissionSchedulers.io())
                 .observeOn(PermissionSchedulers.mainThread())
                 .requestPermissions(new PermissionCallback<Permission>() {

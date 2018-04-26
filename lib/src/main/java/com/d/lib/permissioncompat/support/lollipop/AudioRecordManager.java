@@ -1,4 +1,4 @@
-package com.d.lib.permissioncompat.support;
+package com.d.lib.permissioncompat.support.lollipop;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;

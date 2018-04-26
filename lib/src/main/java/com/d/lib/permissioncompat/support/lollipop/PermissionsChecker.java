@@ -1,8 +1,7 @@
-package com.d.lib.permissioncompat.support;
+package com.d.lib.permissioncompat.support.lollipop;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -25,6 +24,8 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.d.lib.permissioncompat.support.ManufacturerSupport;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -40,24 +41,24 @@ public class PermissionsChecker {
     /**
      * ensure whether permission granted
      */
-    public static boolean isPermissionGranted(Activity activity, String permission) {
+    public static boolean isPermissionGranted(Context context, String permission) {
         try {
             switch (permission) {
                 case Manifest.permission.READ_CONTACTS:
-                    return checkReadContacts(activity);
+                    return checkReadContacts(context);
                 case Manifest.permission.WRITE_CONTACTS:
-                    return checkWriteContacts(activity);
+                    return checkWriteContacts(context);
                 case Manifest.permission.GET_ACCOUNTS:
                     return true;
 
                 case Manifest.permission.READ_CALL_LOG:
-                    return checkReadCallLog(activity);
+                    return checkReadCallLog(context);
                 case Manifest.permission.READ_PHONE_STATE:
-                    return checkReadPhoneState(activity);
+                    return checkReadPhoneState(context);
                 case Manifest.permission.CALL_PHONE:
                     return true;
                 case Manifest.permission.WRITE_CALL_LOG:
-                    return checkWriteCallLog(activity);
+                    return checkWriteCallLog(context);
                 case Manifest.permission.USE_SIP:
                     return true;
                 case Manifest.permission.PROCESS_OUTGOING_CALLS:
@@ -66,30 +67,30 @@ public class PermissionsChecker {
                     return true;
 
                 case Manifest.permission.READ_CALENDAR:
-                    return checkReadCalendar(activity);
+                    return checkReadCalendar(context);
                 case Manifest.permission.WRITE_CALENDAR:
                     return true;
 
                 case Manifest.permission.BODY_SENSORS:
-                    return checkBodySensors(activity);
+                    return checkBodySensors(context);
 
                 case Manifest.permission.CAMERA:
                     return true;
 
                 case Manifest.permission.ACCESS_COARSE_LOCATION:
                 case Manifest.permission.ACCESS_FINE_LOCATION:
-                    return checkLocation(activity);
+                    return checkLocation(context);
 
                 case Manifest.permission.READ_EXTERNAL_STORAGE:
-                    return checkReadStorage(activity);
+                    return checkReadStorage(context);
                 case Manifest.permission.WRITE_EXTERNAL_STORAGE:
-                    return checkWriteStorage(activity);
+                    return checkWriteStorage(context);
 
                 case Manifest.permission.RECORD_AUDIO:
-                    return checkRecordAudio(activity);
+                    return checkRecordAudio(context);
 
                 case Manifest.permission.READ_SMS:
-                    return checkReadSms(activity);
+                    return checkReadSms(context);
                 case Manifest.permission.SEND_SMS:
                 case Manifest.permission.RECEIVE_WAP_PUSH:
                 case Manifest.permission.RECEIVE_MMS:
@@ -106,10 +107,10 @@ public class PermissionsChecker {
     }
 
     /**
-     * record audio, {@link android.Manifest.permission#RECORD_AUDIO},
+     * record audio, {@link Manifest.permission#RECORD_AUDIO},
      * it will consume some resource!!
      */
-    private static boolean checkRecordAudio(Activity activity) throws Exception {
+    private static boolean checkRecordAudio(Context activity) throws Exception {
         AudioRecordManager recordManager = new AudioRecordManager();
         recordManager.startRecord(activity.getExternalFilesDir(Environment.DIRECTORY_RINGTONES)
                 + "/" + TAG + ".3gp");
@@ -119,9 +120,9 @@ public class PermissionsChecker {
     }
 
     /**
-     * read calendar, {@link android.Manifest.permission#READ_CALENDAR}
+     * read calendar, {@link Manifest.permission#READ_CALENDAR}
      */
-    private static boolean checkReadCalendar(Activity activity) throws Exception {
+    private static boolean checkReadCalendar(Context activity) throws Exception {
         Cursor cursor = activity.getContentResolver().query(Uri.parse("content://com" +
                 ".android.calendar/calendars"), null, null, null, null);
         if (cursor != null) {
@@ -133,9 +134,9 @@ public class PermissionsChecker {
     }
 
     /**
-     * write or delete call log, {@link android.Manifest.permission#WRITE_CALL_LOG}
+     * write or delete call log, {@link Manifest.permission#WRITE_CALL_LOG}
      */
-    private static boolean checkWriteCallLog(Activity activity) throws Exception {
+    private static boolean checkWriteCallLog(Context activity) throws Exception {
         ContentResolver contentResolver = activity.getContentResolver();
         ContentValues content = new ContentValues();
         content.put(CallLog.Calls.TYPE, CallLog.Calls.INCOMING_TYPE);
@@ -151,13 +152,13 @@ public class PermissionsChecker {
     }
 
     /**
-     * read sms, {@link android.Manifest.permission#READ_SMS}
+     * read sms, {@link Manifest.permission#READ_SMS}
      * in MEIZU 5.0~6.0, just according normal phone request
      * in XIAOMI 6.0~, need force judge
      * in XIAOMI 5.0~6.0, not test!!!
      */
-    private static boolean checkReadSms(Activity activity) throws Exception {
-        Cursor cursor = activity.getContentResolver().query(Uri.parse("content://sms/"), null, null,
+    private static boolean checkReadSms(Context context) throws Exception {
+        Cursor cursor = context.getContentResolver().query(Uri.parse("content://sms/"), null, null,
                 null, null);
         if (cursor != null) {
             if (ManufacturerSupport.isForceManufacturer()) {
@@ -174,9 +175,9 @@ public class PermissionsChecker {
     }
 
     /**
-     * write storage, {@link android.Manifest.permission#WRITE_EXTERNAL_STORAGE}
+     * write storage, {@link Manifest.permission#WRITE_EXTERNAL_STORAGE}
      */
-    private static boolean checkWriteStorage(Activity activity) throws Exception {
+    private static boolean checkWriteStorage(Context context) throws Exception {
         File file = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES).getPath(), TAG);
         if (!file.exists()) {
@@ -194,9 +195,9 @@ public class PermissionsChecker {
     }
 
     /**
-     * read storage, {@link android.Manifest.permission#READ_EXTERNAL_STORAGE}
+     * read storage, {@link Manifest.permission#READ_EXTERNAL_STORAGE}
      */
-    private static boolean checkReadStorage(Activity activity) throws Exception {
+    private static boolean checkReadStorage(Context context) throws Exception {
         File file = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES).getPath());
         File[] files = file.listFiles();
@@ -204,13 +205,13 @@ public class PermissionsChecker {
     }
 
     /**
-     * use location, {@link android.Manifest.permission#ACCESS_FINE_LOCATION},
-     * {@link android.Manifest.permission#ACCESS_COARSE_LOCATION}
+     * use location, {@link Manifest.permission#ACCESS_FINE_LOCATION},
+     * {@link Manifest.permission#ACCESS_COARSE_LOCATION}
      */
     @SuppressLint("MissingPermission")
-    private static boolean checkLocation(Activity activity) throws Exception {
+    private static boolean checkLocation(Context context) throws Exception {
         granted = false;
-        final LocationManager locationManager = (LocationManager) activity
+        final LocationManager locationManager = (LocationManager) context
                 .getSystemService(Context.LOCATION_SERVICE);
         List<String> list = locationManager.getProviders(true);
 
@@ -249,10 +250,10 @@ public class PermissionsChecker {
     }
 
     /**
-     * use sensors, {@link android.Manifest.permission#BODY_SENSORS}
+     * use sensors, {@link Manifest.permission#BODY_SENSORS}
      */
-    private static boolean checkBodySensors(Activity activity) throws Exception {
-        SensorManager sensorManager = (SensorManager) activity.getSystemService(SENSOR_SERVICE);
+    private static boolean checkBodySensors(Context context) throws Exception {
+        SensorManager sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
         Sensor sensor = sensorManager.getDefaultSensor((Sensor.TYPE_ACCELEROMETER));
         SensorEventListener listener = new SensorEventListener() {
             @Override
@@ -276,13 +277,13 @@ public class PermissionsChecker {
      * in MEIZU TelephonyManager#getSubscriberId() will be null if deny permission
      */
     @SuppressLint({"HardwareIds", "MissingPermission"})
-    private static boolean checkReadPhoneState(Activity activity) throws Exception {
-        TelephonyManager service = (TelephonyManager) activity
+    private static boolean checkReadPhoneState(Context context) throws Exception {
+        TelephonyManager service = (TelephonyManager) context
                 .getSystemService(TELEPHONY_SERVICE);
-        if (ManufacturerSupport.isMEIZU()) {
-            return !TextUtils.isEmpty(service.getSubscriberId());
-        } else if (ManufacturerSupport.isXIAOMI() || ManufacturerSupport.isOPPO()) {
-            return !TextUtils.isEmpty(service.getDeviceId());
+        if (ManufacturerSupport.isMeizu()) {
+            return !TextUtils.isEmpty(service.getDeviceId()) || !TextUtils.isEmpty(service.getSubscriberId());
+        } else if (ManufacturerSupport.isXiaomi() || ManufacturerSupport.isOppo()) {
+            return !TextUtils.isEmpty(service.getDeviceId()) || !TextUtils.isEmpty(service.getSubscriberId());
         } else {
             return !TextUtils.isEmpty(service.getDeviceId())
                     || !TextUtils.isEmpty(service.getSubscriberId());
@@ -290,10 +291,10 @@ public class PermissionsChecker {
     }
 
     /**
-     * read call log, {@link android.Manifest.permission#READ_CALL_LOG}
+     * read call log, {@link Manifest.permission#READ_CALL_LOG}
      */
-    private static boolean checkReadCallLog(Activity activity) throws Exception {
-        Cursor cursor = activity.getContentResolver().query(Uri.parse
+    private static boolean checkReadCallLog(Context context) throws Exception {
+        Cursor cursor = context.getContentResolver().query(Uri.parse
                         ("content://call_log/calls"), null, null,
                 null, null);
         if (cursor != null) {
@@ -311,14 +312,14 @@ public class PermissionsChecker {
     }
 
     /**
-     * write and delete contacts info, {@link android.Manifest.permission#WRITE_CONTACTS}
+     * write and delete contacts info, {@link Manifest.permission#WRITE_CONTACTS}
      * and we should get read contacts permission first.
      */
-    private static boolean checkWriteContacts(Activity activity) throws Exception {
-        if (checkReadContacts(activity)) {
+    private static boolean checkWriteContacts(Context context) throws Exception {
+        if (checkReadContacts(context)) {
             // write some info
             ContentValues values = new ContentValues();
-            ContentResolver contentResolver = activity.getContentResolver();
+            ContentResolver contentResolver = context.getContentResolver();
             Uri rawContactUri = contentResolver.insert(ContactsContract.RawContacts
                     .CONTENT_URI, values);
             long rawContactId = ContentUris.parseId(rawContactUri);
@@ -331,7 +332,7 @@ public class PermissionsChecker {
 
             // delete info
             Uri uri = Uri.parse("content://com.android.contacts/raw_contacts");
-            ContentResolver resolver = activity.getContentResolver();
+            ContentResolver resolver = context.getContentResolver();
             Cursor cursor = resolver.query(uri, new String[]{ContactsContract.Contacts.Data._ID},
                     "display_name=?", new String[]{TAG}, null);
             if (cursor != null) {
@@ -350,10 +351,10 @@ public class PermissionsChecker {
     }
 
     /**
-     * read contacts, {@link android.Manifest.permission#READ_CONTACTS}
+     * read contacts, {@link Manifest.permission#READ_CONTACTS}
      */
-    private static boolean checkReadContacts(Activity activity) throws Exception {
-        Cursor cursor = activity.getContentResolver()
+    private static boolean checkReadContacts(Context context) throws Exception {
+        Cursor cursor = context.getContentResolver()
                 .query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
         if (cursor != null) {
             if (ManufacturerSupport.isForceManufacturer()) {
