@@ -15,11 +15,15 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.CallLog;
 import android.provider.ContactsContract;
 import android.provider.Telephony;
+import android.support.v4.util.SimpleArrayMap;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -38,12 +42,45 @@ public class PermissionsChecker {
     private static final String TAG_NUMBER = "1";
     private static boolean granted = false;
 
+    // Map of dangerous permissions introduced in later framework versions.
+    // Used to conditionally bypass permission-hold checks on older devices.
+    protected final static SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
+
+    static {
+        MIN_SDK_PERMISSIONS = new SimpleArrayMap<String, Integer>(8);
+        MIN_SDK_PERMISSIONS.put("com.android.voicemail.permission.ADD_VOICEMAIL", 14);
+        MIN_SDK_PERMISSIONS.put("android.permission.BODY_SENSORS", 20);
+        MIN_SDK_PERMISSIONS.put("android.permission.READ_CALL_LOG", 16);
+        MIN_SDK_PERMISSIONS.put("android.permission.READ_EXTERNAL_STORAGE", 16);
+        MIN_SDK_PERMISSIONS.put("android.permission.USE_SIP", 9);
+        MIN_SDK_PERMISSIONS.put("android.permission.WRITE_CALL_LOG", 16);
+        MIN_SDK_PERMISSIONS.put("android.permission.SYSTEM_ALERT_WINDOW", 23);
+        MIN_SDK_PERMISSIONS.put("android.permission.WRITE_SETTINGS", 23);
+    }
+
     /**
-     * ensure whether permission granted
+     * Returns true if the permission exists in this SDK version
+     *
+     * @param permission permission
+     * @return returns true if the permission exists in this SDK version
+     */
+    private static boolean permissionExists(String permission) {
+        // Check if the permission could potentially be missing on this device
+        Integer minVersion = MIN_SDK_PERMISSIONS.get(permission);
+        // If null was returned from the above call, there is no need for a device API level check for the permission;
+        // otherwise, we check if its minimum API level requirement is met
+        return minVersion == null || Build.VERSION.SDK_INT >= minVersion;
+    }
+
+    /**
+     * Ensure whether permission granted
      */
     public static boolean isPermissionGranted(Context context, String permission) {
         try {
             context = context.getApplicationContext();
+            if (!permissionExists(permission)) {
+                return true;
+            }
             switch (permission) {
                 case Manifest.permission.READ_CONTACTS:
                     return checkReadContacts(context);
@@ -102,7 +139,7 @@ public class PermissionsChecker {
             }
         } catch (Throwable e) {
             e.printStackTrace();
-            Log.e(TAG, "throwing exception in PermissionChecker:  ", e);
+            Log.e(TAG, "throwing exception in PermissionChecker: ", e);
             return false;
         }
     }
@@ -116,7 +153,7 @@ public class PermissionsChecker {
         recordManager.startRecord(activity.getExternalFilesDir(Environment.DIRECTORY_RINGTONES)
                 + "/" + TAG + ".3gp");
         recordManager.stopRecord();
-
+        // TODO: @dsiner not right here 2018/4/27
         return recordManager.getSuccess();
     }
 
@@ -215,39 +252,53 @@ public class PermissionsChecker {
         final LocationManager locationManager = (LocationManager) context
                 .getSystemService(Context.LOCATION_SERVICE);
         List<String> list = locationManager.getProviders(true);
-
         if (list.contains(LocationManager.GPS_PROVIDER)) {
             return true;
         } else if (list.contains(LocationManager.NETWORK_PROVIDER)) {
             return true;
         } else {
             if (!locationManager.isProviderEnabled("gps")) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0F, new
-                        LocationListener() {
-                            @Override
-                            public void onLocationChanged(Location location) {
-                                locationManager.removeUpdates(this);
-                            }
-
-                            @Override
-                            public void onStatusChanged(String provider, int status, Bundle extras) {
-                                locationManager.removeUpdates(this);
-                                granted = true;
-                            }
-
-                            @Override
-                            public void onProviderEnabled(String provider) {
-                                locationManager.removeUpdates(this);
-                            }
-
-                            @Override
-                            public void onProviderDisabled(String provider) {
-                                locationManager.removeUpdates(this);
-                            }
-                        });
+                if (Looper.getMainLooper().getThread() == Thread.currentThread()) {
+                    requestLocationUpdates(locationManager);
+                } else {
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            requestLocationUpdates(locationManager);
+                        }
+                    });
+                }
             }
+            // TODO: @dsiner not right here 2018/4/27
             return granted;
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private static void requestLocationUpdates(final LocationManager locationManager) {
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0F, new
+                LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        locationManager.removeUpdates(this);
+                    }
+
+                    @Override
+                    public void onStatusChanged(String provider, int status, Bundle extras) {
+                        locationManager.removeUpdates(this);
+                        granted = true;
+                    }
+
+                    @Override
+                    public void onProviderEnabled(String provider) {
+                        locationManager.removeUpdates(this);
+                    }
+
+                    @Override
+                    public void onProviderDisabled(String provider) {
+                        locationManager.removeUpdates(this);
+                    }
+                });
     }
 
     /**
@@ -302,7 +353,8 @@ public class PermissionsChecker {
             if (ManufacturerSupport.isForceManufacturer()) {
                 if (isNumberIndexInfoIsNull(cursor, cursor.getColumnIndex(CallLog.Calls.NUMBER))) {
                     cursor.close();
-                    return false;
+                    // TODO: @dsiner not right here: call log is empty 2018/4/27
+                    return true;
                 }
             }
             cursor.close();

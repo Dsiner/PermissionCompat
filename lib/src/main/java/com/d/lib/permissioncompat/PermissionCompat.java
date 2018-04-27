@@ -10,7 +10,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.util.SimpleArrayMap;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -30,22 +29,6 @@ import java.util.List;
 public class PermissionCompat {
 
     public final static String TAG = "PermissionCompat";
-
-    // Map of dangerous permissions introduced in later framework versions.
-    // Used to conditionally bypass permission-hold checks on older devices.
-    protected final static SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
-
-    static {
-        MIN_SDK_PERMISSIONS = new SimpleArrayMap<String, Integer>(8);
-        MIN_SDK_PERMISSIONS.put("com.android.voicemail.permission.ADD_VOICEMAIL", 14);
-        MIN_SDK_PERMISSIONS.put("android.permission.BODY_SENSORS", 20);
-        MIN_SDK_PERMISSIONS.put("android.permission.READ_CALL_LOG", 16);
-        MIN_SDK_PERMISSIONS.put("android.permission.READ_EXTERNAL_STORAGE", 16);
-        MIN_SDK_PERMISSIONS.put("android.permission.USE_SIP", 9);
-        MIN_SDK_PERMISSIONS.put("android.permission.WRITE_CALL_LOG", 16);
-        MIN_SDK_PERMISSIONS.put("android.permission.SYSTEM_ALERT_WINDOW", 23);
-        MIN_SDK_PERMISSIONS.put("android.permission.WRITE_SETTINGS", 23);
-    }
 
     protected Context mContext;
     protected WeakReference<Activity> mRefActivity;
@@ -312,25 +295,11 @@ public class PermissionCompat {
             throw new IllegalArgumentException("permissions is null or empty");
         }
         for (String permission : permissions) {
-            if (permissionExists(permission) && !hasSelfPermission(context, permission)) {
+            if (!hasSelfPermission(context, permission)) {
                 return false;
             }
         }
         return true;
-    }
-
-    /**
-     * Returns true if the permission exists in this SDK version
-     *
-     * @param permission permission
-     * @return returns true if the permission exists in this SDK version
-     */
-    private static boolean permissionExists(String permission) {
-        // Check if the permission could potentially be missing on this device
-        Integer minVersion = MIN_SDK_PERMISSIONS.get(permission);
-        // If null was returned from the above call, there is no need for a device API level check for the permission;
-        // otherwise, we check if its minimum API level requirement is met
-        return minVersion == null || Build.VERSION.SDK_INT >= minVersion;
     }
 
     /**

@@ -13,10 +13,33 @@ import com.d.lib.permissioncompat.PermissionSchedulers;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static String[] PERMISSIONS = {Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.WRITE_CONTACTS,
+    private static String[] PERMISSIONS = {
             Manifest.permission.READ_CONTACTS,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            Manifest.permission.WRITE_CONTACTS,
+            Manifest.permission.GET_ACCOUNTS,
+
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.CALL_PHONE,
+            Manifest.permission.WRITE_CALL_LOG,
+            Manifest.permission.USE_SIP,
+            Manifest.permission.PROCESS_OUTGOING_CALLS,
+
+            Manifest.permission.READ_CALENDAR,
+            Manifest.permission.WRITE_CALENDAR,
+
+            Manifest.permission.BODY_SENSORS,
+            Manifest.permission.CAMERA,
+
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+
+            Manifest.permission.READ_SMS,
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.RECEIVE_WAP_PUSH,
+            Manifest.permission.RECEIVE_MMS,
+            Manifest.permission.RECEIVE_SMS,
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
