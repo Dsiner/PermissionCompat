@@ -10,7 +10,7 @@
         android:id="@+id/btn_permission"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="8dp"
+        android:padding="12dp"
         android:text="request permissions"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

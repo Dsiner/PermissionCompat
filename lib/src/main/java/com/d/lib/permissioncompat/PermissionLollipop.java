@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.d.lib.permissioncompat.callback.PublishCallback;
 import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class PermissionLollipop extends PermissionCompat {
             Log.d(PermissionCompat.TAG, "deny permissions " + TextUtils.join(", ", unrequestedPermissionsArray));
         }
         final Permission result = combinePermission(ps);
-        switchThread(observeOnScheduler, new Runnable() {
+        PermissionSchedulers.switchThread(observeOnScheduler, new Runnable() {
             @Override
             public void run() {
                 if (isFinish()) {
@@ -63,6 +64,6 @@ public class PermissionLollipop extends PermissionCompat {
 
     @Override
     public boolean isGranted(String permission) {
-        return PermissionsChecker.isPermissionGranted(mContext, permission);
+        return isFinish() || PermissionsChecker.requestPermissions(mContext, permission);
     }
 }

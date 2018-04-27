@@ -1,4 +1,4 @@
-package com.d.lib.permissioncompat;
+package com.d.lib.permissioncompat.callback;
 
 /**
  * PermissionCallback

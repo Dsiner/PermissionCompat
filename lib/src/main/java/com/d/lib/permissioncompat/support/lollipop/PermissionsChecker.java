@@ -73,75 +73,107 @@ public class PermissionsChecker {
     }
 
     /**
+     * Whether cached permission is granted
+     */
+    public static boolean isPermissionGranted(String permission) {
+        return PermissionCache.get(permission);
+    }
+
+    /**
      * Ensure whether permission granted
      */
-    public static boolean isPermissionGranted(Context context, String permission) {
+    public synchronized static boolean requestPermissions(Context context, String permission) {
+        boolean granted;
         try {
             context = context.getApplicationContext();
             if (!permissionExists(permission)) {
+                PermissionCache.put(permission, true);
                 return true;
             }
             switch (permission) {
                 case Manifest.permission.READ_CONTACTS:
-                    return checkReadContacts(context);
+                    granted = checkReadContacts(context);
+                    break;
                 case Manifest.permission.WRITE_CONTACTS:
-                    return checkWriteContacts(context);
+                    granted = checkWriteContacts(context);
+                    break;
                 case Manifest.permission.GET_ACCOUNTS:
-                    return true;
+                    granted = true;
+                    break;
 
                 case Manifest.permission.READ_CALL_LOG:
-                    return checkReadCallLog(context);
+                    granted = checkReadCallLog(context);
+                    break;
                 case Manifest.permission.READ_PHONE_STATE:
-                    return checkReadPhoneState(context);
+                    granted = checkReadPhoneState(context);
+                    break;
                 case Manifest.permission.CALL_PHONE:
-                    return true;
+                    granted = true;
+                    break;
                 case Manifest.permission.WRITE_CALL_LOG:
-                    return checkWriteCallLog(context);
+                    granted = checkWriteCallLog(context);
+                    break;
                 case Manifest.permission.USE_SIP:
-                    return true;
+                    granted = true;
+                    break;
                 case Manifest.permission.PROCESS_OUTGOING_CALLS:
-                    return true;
+                    granted = true;
+                    break;
                 case Manifest.permission.ADD_VOICEMAIL:
-                    return true;
+                    granted = true;
+                    break;
 
                 case Manifest.permission.READ_CALENDAR:
-                    return checkReadCalendar(context);
+                    granted = checkReadCalendar(context);
+                    break;
                 case Manifest.permission.WRITE_CALENDAR:
-                    return true;
+                    granted = true;
+                    break;
 
                 case Manifest.permission.BODY_SENSORS:
-                    return checkBodySensors(context);
+                    granted = checkBodySensors(context);
+                    break;
 
                 case Manifest.permission.CAMERA:
-                    return true;
+                    granted = true;
+                    break;
 
                 case Manifest.permission.ACCESS_COARSE_LOCATION:
                 case Manifest.permission.ACCESS_FINE_LOCATION:
-                    return checkLocation(context);
+                    granted = checkLocation(context);
+                    break;
 
                 case Manifest.permission.READ_EXTERNAL_STORAGE:
-                    return checkReadStorage(context);
+                    granted = checkReadStorage(context);
+                    break;
                 case Manifest.permission.WRITE_EXTERNAL_STORAGE:
-                    return checkWriteStorage(context);
+                    granted = checkWriteStorage(context);
+                    break;
 
                 case Manifest.permission.RECORD_AUDIO:
-                    return checkRecordAudio(context);
+                    granted = checkRecordAudio(context);
+                    break;
 
                 case Manifest.permission.READ_SMS:
-                    return checkReadSms(context);
+                    granted = checkReadSms(context);
+                    break;
                 case Manifest.permission.SEND_SMS:
                 case Manifest.permission.RECEIVE_WAP_PUSH:
                 case Manifest.permission.RECEIVE_MMS:
                 case Manifest.permission.RECEIVE_SMS:
-                    return true;
+                    granted = true;
+                    break;
                 default:
-                    return true;
+                    granted = true;
+                    break;
             }
         } catch (Throwable e) {
             e.printStackTrace();
             Log.e(TAG, "throwing exception in PermissionChecker: ", e);
-            return false;
+            granted = false;
         }
+        PermissionCache.put(permission, granted);
+        return granted;
     }
 
     /**
@@ -202,7 +234,8 @@ public class PermissionsChecker {
             if (ManufacturerSupport.isForceManufacturer()) {
                 if (isNumberIndexInfoIsNull(cursor, cursor.getColumnIndex(Telephony.Sms.DATE))) {
                     cursor.close();
-                    return false;
+                    // TODO: @dsiner not right here: sms is empty 2018/4/27
+                    return true;
                 }
             }
             cursor.close();
@@ -414,7 +447,8 @@ public class PermissionsChecker {
                 if (isNumberIndexInfoIsNull(cursor,
                         cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))) {
                     cursor.close();
-                    return false;
+                    // TODO: @dsiner not right here: contacts is empty 2018/4/27
+                    return true;
                 }
             }
             cursor.close();

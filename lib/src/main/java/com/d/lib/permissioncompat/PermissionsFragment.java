@@ -9,6 +9,9 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.d.lib.permissioncompat.callback.PermissionCallback;
+import com.d.lib.permissioncompat.callback.PublishCallback;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

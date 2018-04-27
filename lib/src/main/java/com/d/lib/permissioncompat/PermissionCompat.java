@@ -6,13 +6,14 @@ import android.app.FragmentManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.d.lib.permissioncompat.callback.PermissionCallback;
+import com.d.lib.permissioncompat.callback.PermissionSimpleCallback;
+import com.d.lib.permissioncompat.callback.PublishCallback;
 import com.d.lib.permissioncompat.support.ManufacturerSupport;
 import com.d.lib.permissioncompat.support.PermissionSupport;
 import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
@@ -33,7 +34,7 @@ public class PermissionCompat {
     protected Context mContext;
     protected WeakReference<Activity> mRefActivity;
     protected String[] mPermissions;
-    protected WeakReference<PermissionCallback<Permission>> mCallback;
+    protected PermissionCallback<Permission> mCallback;
     protected PermissionsFragment mPermissionsFragment;
     protected PermissionSchedulers.Schedulers subscribeScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
     protected PermissionSchedulers.Schedulers observeOnScheduler = PermissionSchedulers.Schedulers.DEFAULT_THREAD;
@@ -49,11 +50,11 @@ public class PermissionCompat {
     }
 
     protected PermissionCallback<Permission> getCallback() {
-        return mCallback != null ? mCallback.get() : null;
+        return mCallback;
     }
 
     protected boolean isFinish() {
-        return getActivity() == null || getActivity().isFinishing() || getCallback() == null;
+        return getActivity() == null || getActivity().isFinishing();
     }
 
     protected PermissionsFragment getPermissionsFragment(Activity activity) {
@@ -110,8 +111,8 @@ public class PermissionCompat {
         if (mPermissions == null || mPermissions.length == 0) {
             throw new IllegalArgumentException("PermissionCompat.request/requestEach requires at least one input permission");
         }
-        this.mCallback = new WeakReference<>(callback);
-        switchThread(subscribeScheduler, new Runnable() {
+        this.mCallback = callback;
+        PermissionSchedulers.switchThread(subscribeScheduler, new Runnable() {
             @Override
             public void run() {
                 if (isFinish()) {
@@ -176,7 +177,7 @@ public class PermissionCompat {
                     list.addAll(ps);
                     list.addAll(permission);
                     final Permission result = combinePermission(list);
-                    switchThread(observeOnScheduler, new Runnable() {
+                    PermissionSchedulers.switchThread(observeOnScheduler, new Runnable() {
                         @Override
                         public void run() {
                             if (isFinish()) {
@@ -199,7 +200,7 @@ public class PermissionCompat {
             });
         } else {
             final Permission result = combinePermission(ps);
-            switchThread(observeOnScheduler, new Runnable() {
+            PermissionSchedulers.switchThread(observeOnScheduler, new Runnable() {
                 @Override
                 public void run() {
                     if (isFinish()) {
@@ -317,7 +318,7 @@ public class PermissionCompat {
         context = context.getApplicationContext();
         int type = PermissionSupport.getType();
         if (type == PermissionSupport.TYPE_LOLLIPOP) {
-            return PermissionsChecker.isPermissionGranted(context, permission);
+            return PermissionsChecker.isPermissionGranted(permission);
         } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
             return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
         } else if (type == PermissionSupport.TYPE_MARSHMALLOW) {
@@ -330,43 +331,47 @@ public class PermissionCompat {
         return true;
     }
 
-    protected void switchThread(PermissionSchedulers.Schedulers scheduler, final Runnable runnable) {
-        if (scheduler == PermissionSchedulers.Schedulers.IO) {
-            new Thread(new Runnable() {
+    @Deprecated
+    public static void checkSelfPermissions(Activity activity, final PermissionSimpleCallback callback, final String... permissions) {
+        if (activity == null) {
+            return;
+        }
+        if (!PermissionSupport.isL() && hasSelfPermissions(activity, permissions)) {
+            PermissionSchedulers.switchThread(PermissionSchedulers.Schedulers.MAIN_THREAD, new Runnable() {
                 @Override
                 public void run() {
-                    if (runnable != null) {
-                        runnable.run();
+                    if (callback != null) {
+                        callback.onGranted();
                     }
                 }
-            }).start();
+            });
             return;
-        } else if (scheduler == PermissionSchedulers.Schedulers.MAIN_THREAD) {
-            if (!isMainThread()) {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
+        }
+
+        PermissionCompat.with(activity).requestEachCombined(permissions)
+                .subscribeOn(PermissionSchedulers.io())
+                .observeOn(PermissionSchedulers.mainThread())
+                .requestPermissions(new PermissionCallback<Permission>() {
                     @Override
-                    public void run() {
-                        if (runnable != null) {
-                            runnable.run();
+                    public void onNext(Permission permission) {
+                        if (permission.granted) {
+                            // All permissions are granted !
+                            if (callback != null) {
+                                callback.onGranted();
+                            }
+                        } else if (permission.shouldShowRequestPermissionRationale) {
+                            // At least one denied permission without ask never again
+                            if (callback != null) {
+                                callback.onDeny();
+                            }
+                        } else {
+                            // At least one denied permission with ask never again
+                            // Need to go to the settings
+                            if (callback != null) {
+                                callback.onDeny();
+                            }
                         }
                     }
                 });
-                return;
-            }
-        }
-        if (runnable != null) {
-            runnable.run();
-        }
-    }
-
-    private boolean isMainThread() {
-        return Looper.getMainLooper().getThread() == Thread.currentThread();
-    }
-
-    /**
-     * Print thread information where the current code is
-     */
-    public static void printThread(String tag) {
-        Log.d(TAG, tag + " " + Thread.currentThread().getId() + "--NAME--" + Thread.currentThread().getName());
     }
 }

@@ -18,16 +18,29 @@ public class ManufacturerSupport {
     static final String MANUFACTURER_HUAWEI = "HUAWEI";
     static final String MANUFACTURER_VIVO = "vivo";
 
-    private static String[] forceManufacturers = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
-    private static String[] underMHasPermissionsRequestManufacturer = {MANUFACTURER_XIAOMI,
+    private final static String[] forceXiaomiManufacturers = new String[]{"Redmi Note 3"};
+    private final static String[] forceManufacturers = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
+    private final static String[] underMHasPermissionsRequestManufacturer = {MANUFACTURER_XIAOMI,
             MANUFACTURER_MEIZU, MANUFACTURER_OPPO};
 
-    private static Set<String> forceSet = new HashSet<>(Arrays.asList(forceManufacturers));
-    private static Set<String> underMSet = new HashSet<>(Arrays.asList
+    private final static Set<String> forceSet = new HashSet<>(Arrays.asList(forceManufacturers));
+    private final static Set<String> underMSet = new HashSet<>(Arrays.asList
             (underMHasPermissionsRequestManufacturer));
 
     public static boolean isXiaomi() {
         return MANUFACTURER_XIAOMI.equalsIgnoreCase(Build.MANUFACTURER);
+    }
+
+    /**
+     * Whether the device is special Xiaomi that need to request permission like LOLLIPOP
+     */
+    public static boolean isXiaomiSpecial() {
+        for (String manufacturer : forceXiaomiManufacturers) {
+            if (manufacturer.equalsIgnoreCase(Build.MODEL)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isOppo() {
