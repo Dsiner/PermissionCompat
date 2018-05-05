@@ -1,9 +1,11 @@
 package com.d.lib.permissioncompat;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.v4.app.AppOpsManagerCompat;
@@ -26,6 +28,7 @@ public class PermissionXiaomi extends PermissionCompat {
         super(activity);
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     @Override
     protected PermissionsFragment getPermissionsFragment(Activity activity) {
         PermissionsFragment permissionsFragment = findPermissionsFragment(activity);

@@ -3,6 +3,8 @@ package com.d.lib.permissioncompat.callback;
 import android.app.Activity;
 import android.app.Fragment;
 
+import com.d.lib.permissioncompat.support.ManufacturerSupport;
+
 import java.lang.ref.WeakReference;
 
 @Deprecated
@@ -23,7 +25,7 @@ public abstract class WeakRefPermissionSimpleCallback<T> extends PermissionSimpl
         }
         if (getView() instanceof Activity) {
             return ((Activity) getView()).isFinishing();
-        } else if (getView() instanceof Fragment) {
+        } else if (ManufacturerSupport.isHoneycomb() && getView() instanceof Fragment) {
             Activity activity = ((Fragment) getView()).getActivity();
             return activity == null || activity.isFinishing();
         } else if (getView() instanceof android.support.v4.app.Fragment) {

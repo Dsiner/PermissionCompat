@@ -51,6 +51,12 @@ public class ManufacturerSupport {
         return MANUFACTURER_MEIZU.equalsIgnoreCase(Build.MANUFACTURER);
     }
 
+    /**
+     * Build version code is 3.0
+     */
+    public static boolean isHoneycomb() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+    }
 
     /**
      * Build version code is 6.0

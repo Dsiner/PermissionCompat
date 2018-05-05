@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class PermissionsFragment extends Fragment {
 
     protected static final int PERMISSIONS_REQUEST_CODE = 42;

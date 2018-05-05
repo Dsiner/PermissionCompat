@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -42,7 +43,9 @@ public class PermissionCompat {
     PermissionCompat(@NonNull Activity activity) {
         mContext = activity.getApplicationContext();
         mRefActivity = new WeakReference<>(activity);
-        mPermissionsFragment = getPermissionsFragment(activity);
+        if (ManufacturerSupport.isHoneycomb()) {
+            mPermissionsFragment = getPermissionsFragment(activity);
+        }
     }
 
     protected Activity getActivity() {
@@ -57,6 +60,7 @@ public class PermissionCompat {
         return getActivity() == null || getActivity().isFinishing();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
     protected PermissionsFragment getPermissionsFragment(Activity activity) {
         PermissionsFragment permissionsFragment = findPermissionsFragment(activity);
         boolean isNewInstance = permissionsFragment == null;
@@ -71,6 +75,7 @@ public class PermissionCompat {
         return permissionsFragment;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
     protected PermissionsFragment findPermissionsFragment(Activity activity) {
         return (PermissionsFragment) activity.getFragmentManager().findFragmentByTag(TAG);
     }
@@ -123,7 +128,6 @@ public class PermissionCompat {
         });
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     protected void requestImplementation(final String... permissions) {
         final List<Permission> ps = new ArrayList<>();
         final List<PublishCallback<Permission>> publishs = new ArrayList<>(permissions.length);
