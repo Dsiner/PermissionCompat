@@ -24,7 +24,11 @@ public class PermissionSupport {
     public final static int SUPPORT_LEVEL_M = 0;
     public final static int SUPPORT_LEVEL_M_XIAOMI = 1;
     public final static int SUPPORT_LEVEL_L = 2;
-    private static int supportLevel = SUPPORT_LEVEL_M;
+
+    /**
+     * The default level is SUPPORT_LEVEL_M_XIAOMI
+     */
+    private static int supportLevel = SUPPORT_LEVEL_M_XIAOMI;
 
     @IntDef({SUPPORT_LEVEL_M, SUPPORT_LEVEL_M_XIAOMI, SUPPORT_LEVEL_L})
     @Retention(RetentionPolicy.SOURCE)

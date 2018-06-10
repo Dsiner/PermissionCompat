@@ -18,6 +18,9 @@ public class ManufacturerSupport {
     static final String MANUFACTURER_HUAWEI = "HUAWEI";
     static final String MANUFACTURER_VIVO = "vivo";
 
+    /**
+     * Special Xiaomi that need to request permission like LOLLIPOP
+     */
     private final static String[] forceXiaomiManufacturers = new String[]{"Redmi Note 3"};
     private final static String[] forceManufacturers = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
     private final static String[] underMHasPermissionsRequestManufacturer = {MANUFACTURER_XIAOMI,
@@ -35,12 +38,13 @@ public class ManufacturerSupport {
      * Whether the device is special Xiaomi that need to request permission like LOLLIPOP
      */
     public static boolean isXiaomiSpecial() {
-        for (String manufacturer : forceXiaomiManufacturers) {
-            if (manufacturer.equalsIgnoreCase(Build.MODEL)) {
-                return true;
-            }
-        }
         return false;
+//        for (String manufacturer : forceXiaomiManufacturers) {
+//            if (manufacturer.equalsIgnoreCase(Build.MODEL)) {
+//                return true;
+//            }
+//        }
+//        return false;
     }
 
     public static boolean isOppo() {

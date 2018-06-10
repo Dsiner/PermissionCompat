@@ -3,7 +3,31 @@
 [![License](https://img.shields.io/badge/license-Apache%202-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![API](https://img.shields.io/badge/API-9%2B-green.svg?style=flat)](https://android-arsenal.com/api?level=9)
 
+> A library to handle runtime permissions
+
+## Features
+- [x] Fully Marshmallow support
+- [x] Xiaomi support
+- [x] Special devices support, such as Xiaomi, Meizu, etc. it's not good, can not be 100% supported
+
+## Configuration
+- [SUPPORT_LEVEL_M]() If you only want to support Marshmallow above.
+- [SUPPORT_LEVEL_M_XIAOMI]() If you only want to support Marshmallow above and Xiaomi device. Default options
+- [SUPPORT_LEVEL_L]() If you want to support LOLLIPOP above, such as Xiaomi, Meizu, Oppo, etc. Not Suggest
+
+```java
+PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
+```
+
 ## Usage
+
+Check permissions
+
+```java
+PermissionCompat.hasSelfPermissions(activity, permissions)
+```
+Request permissions
+
 ```java
         PermissionCompat.with(activity)
                 .requestEachCombined(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -25,6 +49,12 @@
                         }
                     }
                 });
+```
+
+Request permissions in asynchronous thread
+
+```java
+PermissionCompat.checkSelfPermissions(activity, new WeakRefSimpleCallback(activity), PERMISSIONS);
 ```
 
 More usage see [Demo](app/src/main/java/com/d/permissioncompat/MainActivity.java)

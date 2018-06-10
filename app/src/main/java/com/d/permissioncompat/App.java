@@ -9,6 +9,6 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_L);
+        PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
     }
 }
