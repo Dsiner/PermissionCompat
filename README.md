@@ -5,15 +5,29 @@
 
 > A library to handle runtime permissions
 
+## Set up
+Maven:
+```xml
+<dependency>
+  <groupId>com.dsiner.lib</groupId>
+  <artifactId>permissioncompat</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+or Gradle:
+```groovy
+compile 'com.dsiner.lib:permissioncompat:1.0.0'
+```
+
 ## Features
 - [x] Fully Marshmallow support
 - [x] Xiaomi support
-- [x] Special devices support, such as Xiaomi, Meizu, etc. it's not good, can not be 100% supported
+- [x] Special devices support, such as Xiaomi, Meizu, Oppo, etc. it's not good, can not be 100% supported
 
 ## Configuration
-- [SUPPORT_LEVEL_M]() If you only want to support Marshmallow above.
-- [SUPPORT_LEVEL_M_XIAOMI]() If you only want to support Marshmallow above and Xiaomi device. Default options
-- [SUPPORT_LEVEL_L]() If you want to support LOLLIPOP above, such as Xiaomi, Meizu, Oppo, etc. Not Suggest
+- `SUPPORT_LEVEL_M` If you only want to support Marshmallow above.
+- `SUPPORT_LEVEL_M_XIAOMI` If you only want to support Marshmallow above and Xiaomi device. Default options
+- `SUPPORT_LEVEL_L` If you want to support LOLLIPOP above, such as Xiaomi, Meizu, Oppo, etc. Not Suggest
 
 ```java
 PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
