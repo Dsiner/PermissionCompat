@@ -12,12 +12,12 @@ Maven:
 <dependency>
   <groupId>com.dsiner.lib</groupId>
   <artifactId>permissioncompat</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 or Gradle:
 ```groovy
-compile 'com.dsiner.lib:permissioncompat:1.0.0'
+compile 'com.dsiner.lib:permissioncompat:1.0.1'
 ```
 
 ## Features
