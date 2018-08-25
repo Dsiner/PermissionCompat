@@ -1,12 +1,22 @@
 package com.d.lib.permissioncompat;
 
-import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
+
+import com.d.lib.permissioncompat.support.thread.ThreadPool;
 
 public class PermissionSchedulers {
 
     enum Schedulers {
-        DEFAULT_THREAD, IO, MAIN_THREAD
+        DEFAULT_THREAD, NEW_THREAD, IO, MAIN_THREAD
+    }
+
+    public static Schedulers defaultThread() {
+        return Schedulers.DEFAULT_THREAD;
+    }
+
+    public static Schedulers newThread() {
+        return Schedulers.NEW_THREAD;
     }
 
     public static Schedulers io() {
@@ -21,36 +31,21 @@ public class PermissionSchedulers {
     /**
      * Switch thread
      */
-    public static void switchThread(PermissionSchedulers.Schedulers scheduler, final Runnable runnable) {
-        if (scheduler == PermissionSchedulers.Schedulers.IO) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (runnable != null) {
-                        runnable.run();
-                    }
-                }
-            }).start();
+    public static void switchThread(PermissionSchedulers.Schedulers scheduler, @NonNull final Runnable runnable) {
+        if (scheduler == PermissionSchedulers.Schedulers.NEW_THREAD) {
+            ThreadPool.getIns().executeNew(runnable);
+            return;
+        } else if (scheduler == PermissionSchedulers.Schedulers.IO) {
+            ThreadPool.getIns().executeTask(runnable);
             return;
         } else if (scheduler == PermissionSchedulers.Schedulers.MAIN_THREAD) {
-            if (!isMainThread()) {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (runnable != null) {
-                            runnable.run();
-                        }
-                    }
-                });
-                return;
-            }
+            ThreadPool.getIns().executeMain(runnable);
+            return;
         }
-        if (runnable != null) {
-            runnable.run();
-        }
+        runnable.run();
     }
 
-    private static boolean isMainThread() {
+    public static boolean isMainThread() {
         return Looper.getMainLooper().getThread() == Thread.currentThread();
     }
 }

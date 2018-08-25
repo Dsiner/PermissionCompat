@@ -2,6 +2,8 @@ package com.d.lib.permissioncompat.support;
 
 import android.support.annotation.IntDef;
 
+import com.d.lib.permissioncompat.support.thread.ThreadPool;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -35,8 +37,18 @@ public class PermissionSupport {
     public @interface SupportLevel {
     }
 
+    /**
+     * Set support level
+     */
     public static void setLevel(@SupportLevel int level) {
         supportLevel = level;
+    }
+
+    /**
+     * Replace thread pool implementation
+     */
+    public static void setPool(ThreadPool pool) {
+        ThreadPool.setPool(pool);
     }
 
     public static int getType() {
