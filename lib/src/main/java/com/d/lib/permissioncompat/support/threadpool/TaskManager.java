@@ -1,4 +1,4 @@
-package com.d.lib.permissioncompat.support.thread;
+package com.d.lib.permissioncompat.support.threadpool;
 
 import android.os.Handler;
 import android.os.Looper;

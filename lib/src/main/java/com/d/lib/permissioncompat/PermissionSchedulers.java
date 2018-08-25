@@ -3,7 +3,7 @@ package com.d.lib.permissioncompat;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 
-import com.d.lib.permissioncompat.support.thread.ThreadPool;
+import com.d.lib.permissioncompat.support.threadpool.ThreadPool;
 
 public class PermissionSchedulers {
 

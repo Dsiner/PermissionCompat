@@ -1,8 +1,10 @@
-package com.d.lib.permissioncompat.support.thread;
+package com.d.lib.permissioncompat.support.threadpool;
+
+import android.support.annotation.NonNull;
 
 /**
  * Abstract thread pool, you can also implement it yourself,
- * the default implementation here is TaskScheduler
+ * the default implementation here is TaskManager
  * Created by D on 2018/8/25.
  */
 public abstract class ThreadPool {
@@ -25,11 +27,31 @@ public abstract class ThreadPool {
             // Not implemented, then use the default
             synchronized (ThreadPool.class) {
                 if (pool == null) {
-                    pool = new TaskScheduler();
+                    pool = getDefaultPool();
                 }
             }
         }
         return pool;
+    }
+
+    @NonNull
+    private static ThreadPool getDefaultPool() {
+        return new ThreadPool() {
+            @Override
+            public void executeMain(Runnable r) {
+                TaskManager.getIns().executeMain(r);
+            }
+
+            @Override
+            public void executeTask(Runnable r) {
+                TaskManager.getIns().executeTask(r);
+            }
+
+            @Override
+            public void executeNew(Runnable r) {
+                TaskManager.getIns().executeNew(r);
+            }
+        };
     }
 
     /**

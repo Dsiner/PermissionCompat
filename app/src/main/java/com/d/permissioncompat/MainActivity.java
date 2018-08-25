@@ -132,11 +132,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
-    /**
-     * 打印当前代码所在线程信息
-     */
-    public static void printThread(String tag) {
-        Log.d("Thread", tag + " " + Thread.currentThread().getId() + "--NAME--" + Thread.currentThread().getName());
-    }
 }

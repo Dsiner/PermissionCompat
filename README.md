@@ -25,23 +25,51 @@ compile 'com.dsiner.lib:permissioncompat:1.0.0'
 - [x] Xiaomi support
 - [x] Special devices support, such as Xiaomi, Meizu, Oppo, etc. it's not good, can not be 100% supported
 
-## Configuration
+## Support level
 - `SUPPORT_LEVEL_M` If you only want to support Marshmallow above.
 - `SUPPORT_LEVEL_M_XIAOMI` If you only want to support Marshmallow above and Xiaomi device. Default options
 - `SUPPORT_LEVEL_L` If you want to support LOLLIPOP above, such as Xiaomi, Meizu, Oppo, etc. Not Suggest
 
+## Initialize in the application
+
 ```java
-PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
+public class App extends Application {
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Set support level
+        PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
+        // You can set the thread pool yourself here, otherwise the default will be used.
+        PermissionSupport.setPool(new ThreadPool() {
+            @Override
+            public void executeMain(Runnable r) {
+                TaskScheduler.executeMain(r);
+            }
+
+            @Override
+            public void executeTask(Runnable r) {
+                TaskScheduler.executeTask(r);
+            }
+
+            @Override
+            public void executeNew(Runnable r) {
+                TaskScheduler.executeNew(r);
+            }
+        });
+    }
+}
 ```
 
 ## Usage
 
-Check permissions
+1. Check permissions
 
 ```java
 PermissionCompat.hasSelfPermissions(activity, permissions)
 ```
-Request permissions
+
+2. Request permissions
 
 ```java
         PermissionCompat.with(activity)
@@ -66,11 +94,14 @@ Request permissions
                 });
 ```
 
-Request permissions in asynchronous thread
+3. Request permissions in asynchronous thread
 
 ```java
 PermissionCompat.checkSelfPermissions(activity, new WeakRefSimpleCallback(activity), PERMISSIONS);
 ```
+
+## Latest Changes
+- [Changelog.md](CHANGELOG.md)
 
 More usage see [Demo](app/src/main/java/com/d/permissioncompat/MainActivity.java)
 

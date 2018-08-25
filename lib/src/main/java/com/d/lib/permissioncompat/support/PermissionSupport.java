@@ -2,7 +2,7 @@ package com.d.lib.permissioncompat.support;
 
 import android.support.annotation.IntDef;
 
-import com.d.lib.permissioncompat.support.thread.ThreadPool;
+import com.d.lib.permissioncompat.support.threadpool.ThreadPool;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
