@@ -13,7 +13,7 @@ public abstract class ThreadPool {
     protected ThreadPool() {
     }
 
-    public static void setPool(ThreadPool pool) {
+    public static void setThreadPool(ThreadPool pool) {
         synchronized (ThreadPool.class) {
             if (ThreadPool.pool == null) {
                 // Initialize only once

@@ -14,7 +14,7 @@ public class App extends Application {
         // Set support level
         PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
         // You can set the thread pool yourself here, otherwise the default will be used.
-        PermissionSupport.setPool(new ThreadPool() {
+        PermissionSupport.setThreadPool(new ThreadPool() {
             @Override
             public void executeMain(Runnable r) {
                 TaskScheduler.executeMain(r);

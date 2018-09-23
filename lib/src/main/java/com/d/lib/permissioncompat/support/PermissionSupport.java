@@ -47,8 +47,8 @@ public class PermissionSupport {
     /**
      * Replace thread pool implementation
      */
-    public static void setPool(ThreadPool pool) {
-        ThreadPool.setPool(pool);
+    public static void setThreadPool(ThreadPool pool) {
+        ThreadPool.setThreadPool(pool);
     }
 
     public static int getType() {
