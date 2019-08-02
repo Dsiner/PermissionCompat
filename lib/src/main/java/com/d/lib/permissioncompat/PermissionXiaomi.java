@@ -80,17 +80,17 @@ public class PermissionXiaomi extends PermissionCompat {
     }
 
     public static boolean hasSelfPermissionForXiaomiOS(Context context, String permission) {
-        context = context.getApplicationContext();
-        String permissionToOp = AppOpsManagerCompat.permissionToOp(permission);
-        if (permissionToOp == null) {
-            // in case of normal permissions(e.g. INTERNET)
-            return true;
-        }
-        int noteOp = AppOpsManagerCompat.noteOp(context, permissionToOp, Process.myUid(), context.getPackageName());
         try {
+            context = context.getApplicationContext();
+            String permissionToOp = AppOpsManagerCompat.permissionToOp(permission);
+            if (permissionToOp == null) {
+                // In case of normal permissions(e.g. INTERNET)
+                return true;
+            }
+            int noteOp = AppOpsManagerCompat.noteOp(context, permissionToOp, Process.myUid(), context.getPackageName());
             return noteOp == AppOpsManagerCompat.MODE_ALLOWED
                     && PermissionChecker.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
-        } catch (RuntimeException t) {
+        } catch (Throwable t) {
             return false;
         }
     }
