@@ -63,10 +63,12 @@ public class App extends Application {
 
 ## Usage
 
-1. Check permissions
+1. Check whether the permissions are all already granted
 
 ```java
-PermissionCompat.hasSelfPermissions(activity, permissions)
+PermissionChecker.isGranted(context, permissions)
+or
+PermissionCompat.hasSelfPermissions(context, permissions)
 ```
 
 2. Request permissions

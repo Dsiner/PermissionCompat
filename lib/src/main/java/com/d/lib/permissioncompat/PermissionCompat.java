@@ -293,11 +293,21 @@ public class PermissionCompat {
     /**
      * Returns true if the permissions are all already granted.
      */
-    public static boolean hasSelfPermissions(@NonNull Context context, String... permissions) {
+    public static boolean hasSelfPermissions(@NonNull Context context, @NonNull List<String> permissions) {
         context = context.getApplicationContext();
-        if (permissions == null || permissions.length <= 0) {
-            throw new IllegalArgumentException("permissions is null or empty");
+        for (String permission : permissions) {
+            if (!hasSelfPermission(context, permission)) {
+                return false;
+            }
         }
+        return true;
+    }
+
+    /**
+     * Returns true if the permissions are all already granted.
+     */
+    public static boolean hasSelfPermissions(@NonNull Context context, @NonNull String... permissions) {
+        context = context.getApplicationContext();
         for (String permission : permissions) {
             if (!hasSelfPermission(context, permission)) {
                 return false;
@@ -317,7 +327,7 @@ public class PermissionCompat {
      * @return returns true if context has access to the given permission, false otherwise.
      * @see #hasSelfPermissions(Context, String...)
      */
-    private static boolean hasSelfPermission(Context context, String permission) {
+    private static boolean hasSelfPermission(@NonNull Context context, @NonNull String permission) {
         context = context.getApplicationContext();
         int type = PermissionSupport.getType();
         if (type == PermissionSupport.TYPE_LOLLIPOP) {
