@@ -26,8 +26,8 @@ compile 'com.dsiner.lib:permissioncompat:1.0.2'
 - [x] Special devices support, such as Xiaomi, Meizu, Oppo, etc. it's not good, can not be 100% supported
 
 ## Support level
-- `SUPPORT_LEVEL_M` If you only want to support Marshmallow above.
-- `SUPPORT_LEVEL_M_XIAOMI` If you only want to support Marshmallow above and Xiaomi device. Default options
+- `SUPPORT_LEVEL_M` If you only want to support Marshmallow above. 'Default options'
+- `SUPPORT_LEVEL_M_XIAOMI` If you only want to support Marshmallow above and Xiaomi device.
 - `SUPPORT_LEVEL_L` If you want to support LOLLIPOP above, such as Xiaomi, Meizu, Oppo, etc. Not Suggest
 
 ## Initialize in the application
