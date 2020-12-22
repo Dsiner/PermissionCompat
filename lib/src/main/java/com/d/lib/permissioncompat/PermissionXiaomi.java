@@ -12,7 +12,7 @@ import android.support.v4.app.AppOpsManagerCompat;
 import android.support.v4.content.PermissionChecker;
 
 import com.d.lib.permissioncompat.support.ManufacturerSupport;
-import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
+import com.d.lib.permissioncompat.support.lollipop.LollipopPermissionChecker;
 import com.d.lib.permissioncompat.support.xiaomi.PermissionsFragmentXiaomi;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class PermissionXiaomi extends PermissionCompat {
         if (ManufacturerSupport.isXiaomiSpecial()) {
             List<Permission> list = new ArrayList<>();
             for (Permission p : permissions) {
-                if (!isFinish() && p.granted && !PermissionsChecker.requestPermissions(mContext, p.name)) {
+                if (!isFinish() && p.granted && !LollipopPermissionChecker.requestPermissions(mContext, p.name)) {
                     list.add(p);
                 }
             }
@@ -67,14 +67,14 @@ public class PermissionXiaomi extends PermissionCompat {
     public boolean isGranted(String permission) {
         if (ManufacturerSupport.isXiaomiSpecial()) {
             return isFinish() || hasSelfPermissionForXiaomiOS(mContext, permission)
-                    && PermissionsChecker.requestPermissions(mContext, permission);
+                    && LollipopPermissionChecker.requestPermissions(mContext, permission);
         }
         return hasSelfPermissionForXiaomiOS(mContext, permission);
     }
 
     public static boolean hasSelfPermissionForXiaomi(Context context, String permission) {
         if (ManufacturerSupport.isXiaomiSpecial()) {
-            return PermissionsChecker.isPermissionGranted(permission);
+            return LollipopPermissionChecker.isGranted(permission);
         }
         return hasSelfPermissionForXiaomiOS(context, permission);
     }

@@ -37,10 +37,10 @@ import java.util.List;
 import static android.content.Context.SENSOR_SERVICE;
 import static android.content.Context.TELEPHONY_SERVICE;
 
-public class PermissionsChecker {
+public class LollipopPermissionChecker {
     private static final String TAG = "PermissionCompat";
     private static final String TAG_NUMBER = "1";
-    private static boolean granted = false;
+    private static boolean sGranted = false;
 
     // Map of dangerous permissions introduced in later framework versions.
     // Used to conditionally bypass permission-hold checks on older devices.
@@ -75,8 +75,8 @@ public class PermissionsChecker {
     /**
      * Whether cached permission is granted
      */
-    public static boolean isPermissionGranted(String permission) {
-        return PermissionCache.get(permission);
+    public static boolean isGranted(String permission) {
+        return LollipopPermissionCache.get(permission);
     }
 
     /**
@@ -87,7 +87,7 @@ public class PermissionsChecker {
         try {
             context = context.getApplicationContext();
             if (!permissionExists(permission)) {
-                PermissionCache.put(permission, true);
+                LollipopPermissionCache.put(permission, true);
                 return true;
             }
             switch (permission) {
@@ -172,7 +172,7 @@ public class PermissionsChecker {
             Log.e(TAG, "throwing exception in PermissionChecker: ", e);
             granted = false;
         }
-        PermissionCache.put(permission, granted);
+        LollipopPermissionCache.put(permission, granted);
         return granted;
     }
 
@@ -281,7 +281,7 @@ public class PermissionsChecker {
      */
     @SuppressLint("MissingPermission")
     private static boolean checkLocation(Context context) throws Exception {
-        granted = false;
+        sGranted = false;
         final LocationManager locationManager = (LocationManager) context
                 .getSystemService(Context.LOCATION_SERVICE);
         List<String> list = locationManager.getProviders(true);
@@ -303,7 +303,7 @@ public class PermissionsChecker {
                 }
             }
             // TODO: @dsiner not right here 2018/4/27
-            return granted;
+            return sGranted;
         }
     }
 
@@ -319,7 +319,7 @@ public class PermissionsChecker {
                     @Override
                     public void onStatusChanged(String provider, int status, Bundle extras) {
                         locationManager.removeUpdates(this);
-                        granted = true;
+                        sGranted = true;
                     }
 
                     @Override

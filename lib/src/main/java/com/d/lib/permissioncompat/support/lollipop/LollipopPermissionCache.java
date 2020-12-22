@@ -7,7 +7,7 @@ import java.util.Map;
  * PermissionCache
  * Created by D on 2018/4/28.
  */
-public class PermissionCache {
+public class LollipopPermissionCache {
     private static Map<String, Boolean> cache = new HashMap<>();
 
     public static void put(String permission, boolean granted) {

@@ -8,7 +8,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.d.lib.permissioncompat.callback.PublishCallback;
-import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
+import com.d.lib.permissioncompat.support.lollipop.LollipopPermissionChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +64,6 @@ public class PermissionLollipop extends PermissionCompat {
 
     @Override
     public boolean isGranted(String permission) {
-        return isFinish() || PermissionsChecker.requestPermissions(mContext, permission);
+        return isFinish() || LollipopPermissionChecker.requestPermissions(mContext, permission);
     }
 }

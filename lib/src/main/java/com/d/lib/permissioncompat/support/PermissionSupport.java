@@ -28,9 +28,9 @@ public class PermissionSupport {
     public final static int SUPPORT_LEVEL_L = 2;
 
     /**
-     * The default level is SUPPORT_LEVEL_M_XIAOMI
+     * The default level is SUPPORT_LEVEL_M
      */
-    private static int supportLevel = SUPPORT_LEVEL_M_XIAOMI;
+    private static int sSupportLevel = SUPPORT_LEVEL_M;
 
     @IntDef({SUPPORT_LEVEL_M, SUPPORT_LEVEL_M_XIAOMI, SUPPORT_LEVEL_L})
     @Retention(RetentionPolicy.SOURCE)
@@ -41,7 +41,7 @@ public class PermissionSupport {
      * Set support level
      */
     public static void setLevel(@SupportLevel int level) {
-        supportLevel = level;
+        sSupportLevel = level;
     }
 
     /**
@@ -54,9 +54,9 @@ public class PermissionSupport {
     public static int getType() {
         int type = TYPE_MARSHMALLOW;
         if (ManufacturerSupport.isUnderMNeedChecked()) {
-            type = supportLevel >= SUPPORT_LEVEL_L ? TYPE_LOLLIPOP : TYPE_MARSHMALLOW;
+            type = sSupportLevel >= SUPPORT_LEVEL_L ? TYPE_LOLLIPOP : TYPE_MARSHMALLOW;
         } else if (ManufacturerSupport.isMarshmallow() && ManufacturerSupport.isXiaomi()) {
-            type = supportLevel >= SUPPORT_LEVEL_M_XIAOMI ? TYPE_MARSHMALLOW_XIAOMI : TYPE_MARSHMALLOW;
+            type = sSupportLevel >= SUPPORT_LEVEL_M_XIAOMI ? TYPE_MARSHMALLOW_XIAOMI : TYPE_MARSHMALLOW;
         } else if (ManufacturerSupport.isMarshmallow()) {
             type = TYPE_MARSHMALLOW;
         }

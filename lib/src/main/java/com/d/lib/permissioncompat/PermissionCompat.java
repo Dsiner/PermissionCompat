@@ -17,7 +17,7 @@ import com.d.lib.permissioncompat.callback.PermissionSimpleCallback;
 import com.d.lib.permissioncompat.callback.PublishCallback;
 import com.d.lib.permissioncompat.support.ManufacturerSupport;
 import com.d.lib.permissioncompat.support.PermissionSupport;
-import com.d.lib.permissioncompat.support.lollipop.PermissionsChecker;
+import com.d.lib.permissioncompat.support.lollipop.LollipopPermissionChecker;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -258,8 +258,7 @@ public class PermissionCompat {
      */
     @SuppressWarnings("WeakerAccess")
     public boolean isGranted(String permission) {
-        return !ManufacturerSupport.isMarshmallow()
-                || mContext.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
+        return PermissionChecker.isGranted(mContext, permission);
     }
 
     /**
@@ -322,7 +321,7 @@ public class PermissionCompat {
         context = context.getApplicationContext();
         int type = PermissionSupport.getType();
         if (type == PermissionSupport.TYPE_LOLLIPOP) {
-            return PermissionsChecker.isPermissionGranted(permission);
+            return LollipopPermissionChecker.isGranted(permission);
         } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
             return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
         } else if (type == PermissionSupport.TYPE_MARSHMALLOW) {

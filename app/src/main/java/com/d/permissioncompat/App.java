@@ -12,7 +12,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         // Set support level
-        PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M_XIAOMI);
+        PermissionSupport.setLevel(PermissionSupport.SUPPORT_LEVEL_M);
         // You can set the thread pool yourself here, otherwise the default will be used.
         PermissionSupport.setThreadPool(new ThreadPool() {
             @Override
