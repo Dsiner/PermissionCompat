@@ -21,13 +21,13 @@ public class ManufacturerSupport {
     /**
      * Special Xiaomi that need to request permission like LOLLIPOP
      */
-    private final static String[] forceXiaomiManufacturers = new String[]{"Redmi Note 3"};
-    private final static String[] forceManufacturers = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
-    private final static String[] underMHasPermissionsRequestManufacturer = {MANUFACTURER_XIAOMI,
+    private static final String[] forceXiaomiManufacturers = new String[]{"Redmi Note 3"};
+    private static final String[] forceManufacturers = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
+    private static final String[] underMHasPermissionsRequestManufacturer = {MANUFACTURER_XIAOMI,
             MANUFACTURER_MEIZU, MANUFACTURER_OPPO};
 
-    private final static Set<String> forceSet = new HashSet<>(Arrays.asList(forceManufacturers));
-    private final static Set<String> underMSet = new HashSet<>(Arrays.asList
+    private static final Set<String> forceSet = new HashSet<>(Arrays.asList(forceManufacturers));
+    private static final Set<String> underMSet = new HashSet<>(Arrays.asList
             (underMHasPermissionsRequestManufacturer));
 
     public static boolean isXiaomi() {

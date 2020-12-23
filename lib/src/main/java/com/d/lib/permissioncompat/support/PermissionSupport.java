@@ -15,17 +15,17 @@ public class PermissionSupport {
     /**
      * Device type
      */
-    public final static int TYPE_MARSHMALLOW = 0;
-    public final static int TYPE_MARSHMALLOW_XIAOMI = 1;
-    public final static int TYPE_LOLLIPOP = 2;
-    public final static int TYPE_UNSUPPORT = 3;
+    public static final int TYPE_MARSHMALLOW = 0;
+    public static final int TYPE_MARSHMALLOW_XIAOMI = 1;
+    public static final int TYPE_LOLLIPOP = 2;
+    public static final int TYPE_UNSUPPORT = 3;
 
     /**
      * Support level
      */
-    public final static int SUPPORT_LEVEL_M = 0;
-    public final static int SUPPORT_LEVEL_M_XIAOMI = 1;
-    public final static int SUPPORT_LEVEL_L = 2;
+    public static final int SUPPORT_LEVEL_M = 0;
+    public static final int SUPPORT_LEVEL_M_XIAOMI = 1;
+    public static final int SUPPORT_LEVEL_L = 2;
 
     /**
      * The default level is SUPPORT_LEVEL_M

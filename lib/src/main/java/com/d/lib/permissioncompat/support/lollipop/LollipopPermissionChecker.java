@@ -44,7 +44,7 @@ public class LollipopPermissionChecker {
 
     // Map of dangerous permissions introduced in later framework versions.
     // Used to conditionally bypass permission-hold checks on older devices.
-    protected final static SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
+    protected static final SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
 
     static {
         MIN_SDK_PERMISSIONS = new SimpleArrayMap<String, Integer>(8);

@@ -33,13 +33,13 @@ public class PermissionSchedulers {
      */
     public static void switchThread(PermissionSchedulers.Schedulers scheduler, @NonNull final Runnable runnable) {
         if (scheduler == PermissionSchedulers.Schedulers.NEW_THREAD) {
-            ThreadPool.getIns().executeNew(runnable);
+            ThreadPool.getInstance().executeNew(runnable);
             return;
         } else if (scheduler == PermissionSchedulers.Schedulers.IO) {
-            ThreadPool.getIns().executeTask(runnable);
+            ThreadPool.getInstance().executeTask(runnable);
             return;
         } else if (scheduler == PermissionSchedulers.Schedulers.MAIN_THREAD) {
-            ThreadPool.getIns().executeMain(runnable);
+            ThreadPool.getInstance().executeMain(runnable);
             return;
         }
         runnable.run();

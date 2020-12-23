@@ -16,7 +16,7 @@ public class TaskManager {
     private ExecutorService singleThreadExecutor;
 
     private static class Singleton {
-        private final static TaskManager INSTANCE = new TaskManager();
+        private static final TaskManager INSTANCE = new TaskManager();
     }
 
     private TaskManager() {

@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class PermissionCompat {
 
-    public final static String TAG = "PermissionCompat";
+    public static final String TAG = "PermissionCompat";
 
     protected Context mContext;
     protected WeakReference<Activity> mRefActivity;
