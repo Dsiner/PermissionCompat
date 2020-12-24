@@ -38,13 +38,12 @@ import static android.content.Context.SENSOR_SERVICE;
 import static android.content.Context.TELEPHONY_SERVICE;
 
 public class LollipopPermissionChecker {
-    private static final String TAG = "PermissionCompat";
-    private static final String TAG_NUMBER = "1";
-    private static boolean sGranted = false;
-
     // Map of dangerous permissions introduced in later framework versions.
     // Used to conditionally bypass permission-hold checks on older devices.
     protected static final SimpleArrayMap<String, Integer> MIN_SDK_PERMISSIONS;
+    private static final String TAG = "PermissionCompat";
+    private static final String TAG_NUMBER = "1";
+    private static boolean sGranted = false;
 
     static {
         MIN_SDK_PERMISSIONS = new SimpleArrayMap<String, Integer>(8);

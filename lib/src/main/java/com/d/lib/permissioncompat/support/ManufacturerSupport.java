@@ -21,14 +21,15 @@ public class ManufacturerSupport {
     /**
      * Special Xiaomi that need to request permission like LOLLIPOP
      */
-    private static final String[] forceXiaomiManufacturers = new String[]{"Redmi Note 3"};
-    private static final String[] forceManufacturers = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
-    private static final String[] underMHasPermissionsRequestManufacturer = {MANUFACTURER_XIAOMI,
+    private static final String[] FORCE_XIAOMI_MANUFACTURERS = new String[]{"Redmi Note 3"};
+    private static final String[] FORCE_MANUFACTURERS = {MANUFACTURER_XIAOMI, MANUFACTURER_MEIZU};
+    private static final String[] UNDER_M_HAS_PERMISSIONS_REQUEST_MANUFACTURER = {
+            MANUFACTURER_XIAOMI,
             MANUFACTURER_MEIZU, MANUFACTURER_OPPO};
 
-    private static final Set<String> forceSet = new HashSet<>(Arrays.asList(forceManufacturers));
-    private static final Set<String> underMSet = new HashSet<>(Arrays.asList
-            (underMHasPermissionsRequestManufacturer));
+    private static final Set<String> FORCE_SET = new HashSet<>(Arrays.asList(FORCE_MANUFACTURERS));
+    private static final Set<String> UNDER_M_SET = new HashSet<>(Arrays.asList
+            (UNDER_M_HAS_PERMISSIONS_REQUEST_MANUFACTURER));
 
     public static boolean isXiaomi() {
         return MANUFACTURER_XIAOMI.equalsIgnoreCase(Build.MANUFACTURER);
@@ -94,7 +95,7 @@ public class ManufacturerSupport {
      * above {@link Build.VERSION_CODES#LOLLIPOP}
      */
     private static boolean isUnderMHasPermissionManufacturer() {
-        for (String manufacturer : underMSet) {
+        for (String manufacturer : UNDER_M_SET) {
             if (manufacturer.equalsIgnoreCase(Build.MANUFACTURER)) {
                 return true;
             }
@@ -107,7 +108,7 @@ public class ManufacturerSupport {
      * {@link Build.VERSION_CODES#M}
      */
     public static boolean isForceManufacturer() {
-        for (String manufacturer : forceSet) {
+        for (String manufacturer : FORCE_SET) {
             if (manufacturer.equalsIgnoreCase(Build.MANUFACTURER)) {
                 return true;
             }

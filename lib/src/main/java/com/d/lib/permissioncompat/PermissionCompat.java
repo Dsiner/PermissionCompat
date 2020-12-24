@@ -48,6 +48,132 @@ public class PermissionCompat {
         }
     }
 
+    public static PermissionCompat with(Activity activity) {
+        int type = PermissionSupport.getType();
+        if (type == PermissionSupport.TYPE_LOLLIPOP) {
+            return new PermissionLollipop(activity);
+        } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
+            return new PermissionXiaomi(activity);
+        }
+        return new PermissionCompat(activity);
+    }
+
+    /**
+     * Checks all given permissions have been granted.
+     *
+     * @param grantResults results
+     * @return returns true if all permissions have been granted.
+     */
+    public static boolean verifyPermissions(int... grantResults) {
+        if (grantResults.length == 0) {
+            return false;
+        }
+        for (int result : grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if the permissions are all already granted.
+     */
+    public static boolean hasSelfPermissions(@NonNull Context context, @NonNull List<String> permissions) {
+        context = context.getApplicationContext();
+        for (String permission : permissions) {
+            if (!hasSelfPermission(context, permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if the permissions are all already granted.
+     */
+    public static boolean hasSelfPermissions(@NonNull Context context, @NonNull String... permissions) {
+        context = context.getApplicationContext();
+        for (String permission : permissions) {
+            if (!hasSelfPermission(context, permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Determine context has access to the given permission.
+     * <p>
+     * This is a workaround for RuntimeException of Parcel#readException.
+     * For more detail, check this issue https://github.com/hotchemi/PermissionsDispatcher/issues/107
+     *
+     * @param context    context
+     * @param permission permission
+     * @return returns true if context has access to the given permission, false otherwise.
+     * @see #hasSelfPermissions(Context, String...)
+     */
+    private static boolean hasSelfPermission(@NonNull Context context, @NonNull String permission) {
+        context = context.getApplicationContext();
+        int type = PermissionSupport.getType();
+        if (type == PermissionSupport.TYPE_LOLLIPOP) {
+            return LollipopPermissionChecker.isGranted(permission);
+        } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
+            return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
+        } else if (type == PermissionSupport.TYPE_MARSHMALLOW) {
+            try {
+                return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
+            } catch (RuntimeException t) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Deprecated
+    public static void checkSelfPermissions(Activity activity, final PermissionSimpleCallback callback, final String... permissions) {
+        if (activity == null) {
+            return;
+        }
+        if (!PermissionSupport.isL() && hasSelfPermissions(activity, permissions)) {
+            PermissionSchedulers.switchThread(PermissionSchedulers.Schedulers.MAIN_THREAD, new Runnable() {
+                @Override
+                public void run() {
+                    if (callback != null) {
+                        callback.onGranted();
+                    }
+                }
+            });
+            return;
+        }
+
+        PermissionCompat.with(activity).requestEachCombined(permissions)
+                .subscribeOn(PermissionSchedulers.io())
+                .observeOn(PermissionSchedulers.mainThread())
+                .requestPermissions(new PermissionCallback<Permission>() {
+                    @Override
+                    public void onNext(Permission permission) {
+                        if (permission.granted) {
+                            // All permissions are granted !
+                            if (callback != null) {
+                                callback.onGranted();
+                            }
+                        } else if (permission.shouldShowRequestPermissionRationale) {
+                            // At least one denied permission without ask never again
+                            if (callback != null) {
+                                callback.onDeny();
+                            }
+                        } else {
+                            // At least one denied permission with ask never again
+                            // Need to go to the settings
+                            if (callback != null) {
+                                callback.onDeny();
+                            }
+                        }
+                    }
+                });
+    }
+
     protected Activity getActivity() {
         return mRefActivity != null ? mRefActivity.get() : null;
     }
@@ -78,16 +204,6 @@ public class PermissionCompat {
     @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
     protected PermissionsFragment findPermissionsFragment(Activity activity) {
         return (PermissionsFragment) activity.getFragmentManager().findFragmentByTag(TAG);
-    }
-
-    public static PermissionCompat with(Activity activity) {
-        int type = PermissionSupport.getType();
-        if (type == PermissionSupport.TYPE_LOLLIPOP) {
-            return new PermissionLollipop(activity);
-        } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
-            return new PermissionXiaomi(activity);
-        }
-        return new PermissionCompat(activity);
     }
 
     /**
@@ -270,121 +386,5 @@ public class PermissionCompat {
     public boolean isRevoked(String permission) {
         return ManufacturerSupport.isMarshmallow()
                 && mContext.getPackageManager().isPermissionRevokedByPolicy(permission, mContext.getPackageName());
-    }
-
-    /**
-     * Checks all given permissions have been granted.
-     *
-     * @param grantResults results
-     * @return returns true if all permissions have been granted.
-     */
-    public static boolean verifyPermissions(int... grantResults) {
-        if (grantResults.length == 0) {
-            return false;
-        }
-        for (int result : grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Returns true if the permissions are all already granted.
-     */
-    public static boolean hasSelfPermissions(@NonNull Context context, @NonNull List<String> permissions) {
-        context = context.getApplicationContext();
-        for (String permission : permissions) {
-            if (!hasSelfPermission(context, permission)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Returns true if the permissions are all already granted.
-     */
-    public static boolean hasSelfPermissions(@NonNull Context context, @NonNull String... permissions) {
-        context = context.getApplicationContext();
-        for (String permission : permissions) {
-            if (!hasSelfPermission(context, permission)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Determine context has access to the given permission.
-     * <p>
-     * This is a workaround for RuntimeException of Parcel#readException.
-     * For more detail, check this issue https://github.com/hotchemi/PermissionsDispatcher/issues/107
-     *
-     * @param context    context
-     * @param permission permission
-     * @return returns true if context has access to the given permission, false otherwise.
-     * @see #hasSelfPermissions(Context, String...)
-     */
-    private static boolean hasSelfPermission(@NonNull Context context, @NonNull String permission) {
-        context = context.getApplicationContext();
-        int type = PermissionSupport.getType();
-        if (type == PermissionSupport.TYPE_LOLLIPOP) {
-            return LollipopPermissionChecker.isGranted(permission);
-        } else if (type == PermissionSupport.TYPE_MARSHMALLOW_XIAOMI) {
-            return PermissionXiaomi.hasSelfPermissionForXiaomi(context, permission);
-        } else if (type == PermissionSupport.TYPE_MARSHMALLOW) {
-            try {
-                return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
-            } catch (RuntimeException t) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Deprecated
-    public static void checkSelfPermissions(Activity activity, final PermissionSimpleCallback callback, final String... permissions) {
-        if (activity == null) {
-            return;
-        }
-        if (!PermissionSupport.isL() && hasSelfPermissions(activity, permissions)) {
-            PermissionSchedulers.switchThread(PermissionSchedulers.Schedulers.MAIN_THREAD, new Runnable() {
-                @Override
-                public void run() {
-                    if (callback != null) {
-                        callback.onGranted();
-                    }
-                }
-            });
-            return;
-        }
-
-        PermissionCompat.with(activity).requestEachCombined(permissions)
-                .subscribeOn(PermissionSchedulers.io())
-                .observeOn(PermissionSchedulers.mainThread())
-                .requestPermissions(new PermissionCallback<Permission>() {
-                    @Override
-                    public void onNext(Permission permission) {
-                        if (permission.granted) {
-                            // All permissions are granted !
-                            if (callback != null) {
-                                callback.onGranted();
-                            }
-                        } else if (permission.shouldShowRequestPermissionRationale) {
-                            // At least one denied permission without ask never again
-                            if (callback != null) {
-                                callback.onDeny();
-                            }
-                        } else {
-                            // At least one denied permission with ask never again
-                            // Need to go to the settings
-                            if (callback != null) {
-                                callback.onDeny();
-                            }
-                        }
-                    }
-                });
     }
 }

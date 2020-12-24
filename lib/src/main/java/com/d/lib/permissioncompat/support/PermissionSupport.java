@@ -32,11 +32,6 @@ public class PermissionSupport {
      */
     private static int sSupportLevel = SUPPORT_LEVEL_M;
 
-    @IntDef({SUPPORT_LEVEL_M, SUPPORT_LEVEL_M_XIAOMI, SUPPORT_LEVEL_L})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface SupportLevel {
-    }
-
     /**
      * Set support level
      */
@@ -74,5 +69,10 @@ public class PermissionSupport {
             return true;
         }
         return false;
+    }
+
+    @IntDef({SUPPORT_LEVEL_M, SUPPORT_LEVEL_M_XIAOMI, SUPPORT_LEVEL_L})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SupportLevel {
     }
 }

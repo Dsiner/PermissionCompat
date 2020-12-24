@@ -28,6 +28,29 @@ public class PermissionXiaomi extends PermissionCompat {
         super(activity);
     }
 
+    public static boolean hasSelfPermissionForXiaomi(Context context, String permission) {
+        if (ManufacturerSupport.isXiaomiSpecial()) {
+            return LollipopPermissionChecker.isGranted(permission);
+        }
+        return hasSelfPermissionForXiaomiOS(context, permission);
+    }
+
+    public static boolean hasSelfPermissionForXiaomiOS(Context context, String permission) {
+        try {
+            context = context.getApplicationContext();
+            String permissionToOp = AppOpsManagerCompat.permissionToOp(permission);
+            if (permissionToOp == null) {
+                // In case of normal permissions(e.g. INTERNET)
+                return true;
+            }
+            int noteOp = AppOpsManagerCompat.noteOp(context, permissionToOp, Process.myUid(), context.getPackageName());
+            return noteOp == AppOpsManagerCompat.MODE_ALLOWED
+                    && PermissionChecker.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     @TargetApi(Build.VERSION_CODES.M)
     @Override
     protected PermissionsFragment getPermissionsFragment(Activity activity) {
@@ -70,28 +93,5 @@ public class PermissionXiaomi extends PermissionCompat {
                     && LollipopPermissionChecker.requestPermissions(mContext, permission);
         }
         return hasSelfPermissionForXiaomiOS(mContext, permission);
-    }
-
-    public static boolean hasSelfPermissionForXiaomi(Context context, String permission) {
-        if (ManufacturerSupport.isXiaomiSpecial()) {
-            return LollipopPermissionChecker.isGranted(permission);
-        }
-        return hasSelfPermissionForXiaomiOS(context, permission);
-    }
-
-    public static boolean hasSelfPermissionForXiaomiOS(Context context, String permission) {
-        try {
-            context = context.getApplicationContext();
-            String permissionToOp = AppOpsManagerCompat.permissionToOp(permission);
-            if (permissionToOp == null) {
-                // In case of normal permissions(e.g. INTERNET)
-                return true;
-            }
-            int noteOp = AppOpsManagerCompat.noteOp(context, permissionToOp, Process.myUid(), context.getPackageName());
-            return noteOp == AppOpsManagerCompat.MODE_ALLOWED
-                    && PermissionChecker.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
-        } catch (Throwable t) {
-            return false;
-        }
     }
 }

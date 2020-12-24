@@ -7,10 +7,6 @@ import com.d.lib.permissioncompat.support.threadpool.ThreadPool;
 
 public class PermissionSchedulers {
 
-    enum Schedulers {
-        DEFAULT_THREAD, NEW_THREAD, IO, MAIN_THREAD
-    }
-
     public static Schedulers defaultThread() {
         return Schedulers.DEFAULT_THREAD;
     }
@@ -26,7 +22,6 @@ public class PermissionSchedulers {
     public static Schedulers mainThread() {
         return Schedulers.MAIN_THREAD;
     }
-
 
     /**
      * Switch thread
@@ -47,5 +42,9 @@ public class PermissionSchedulers {
 
     public static boolean isMainThread() {
         return Looper.getMainLooper().getThread() == Thread.currentThread();
+    }
+
+    enum Schedulers {
+        DEFAULT_THREAD, NEW_THREAD, IO, MAIN_THREAD
     }
 }
