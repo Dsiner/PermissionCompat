@@ -1,6 +1,10 @@
 Changelog
 --------------------------------
 
+Version: 1.0.3
+--------------------------------
+- Update `targetSdkVersion` to 27
+
 Version: 1.0.2
 --------------------------------
 - Update `targetSdkVersion` to 26

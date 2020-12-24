@@ -45,6 +45,41 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.RECEIVE_SMS,
     };
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        PermissionCompat.checkSelfPermissions(this, new WeakRefSimpleCallback(this), PERMISSIONS);
+        findViewById(R.id.btn_permission).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestPermissions();
+            }
+        });
+    }
+
+    private void requestPermissions() {
+        PermissionCompat.with(this).requestEachCombined(PERMISSIONS)
+                .subscribeOn(PermissionSchedulers.io())
+                .observeOn(PermissionSchedulers.mainThread())
+                .requestPermissions(new WeakRefCallback(this));
+    }
+
+    private void test() {
+        WeakRefCallback callback = new WeakRefCallback(this);
+        callback.onNext(new Permission("", true, false));
+        Class clazz = callback.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            Log.v("PermissionCompat", "dsiner " + field.getName());
+            try {
+                Log.v("PermissionCompat", "dsiner " + field.get(callback));
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     static class WeakRefCallback extends WeakRefPermissionCallback<MainActivity> {
 
         public WeakRefCallback(MainActivity view) {
@@ -95,41 +130,6 @@ public class MainActivity extends AppCompatActivity {
             // At least one denied permission
             // Need to go to the settings
             Toast.makeText(getView().getApplicationContext(), "Need to go to the settings", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        PermissionCompat.checkSelfPermissions(this, new WeakRefSimpleCallback(this), PERMISSIONS);
-        findViewById(R.id.btn_permission).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                requestPermissions();
-            }
-        });
-    }
-
-    private void requestPermissions() {
-        PermissionCompat.with(this).requestEachCombined(PERMISSIONS)
-                .subscribeOn(PermissionSchedulers.io())
-                .observeOn(PermissionSchedulers.mainThread())
-                .requestPermissions(new WeakRefCallback(this));
-    }
-
-    private void test() {
-        WeakRefCallback callback = new WeakRefCallback(this);
-        callback.onNext(new Permission("", true, false));
-        Class clazz = callback.getClass();
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            Log.v("PermissionCompat", "dsiner " + field.getName());
-            try {
-                Log.v("PermissionCompat", "dsiner " + field.get(callback));
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
